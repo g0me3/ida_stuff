@@ -5,11 +5,12 @@
 #define DO_DATA_OFFSET
 #define DO_CODE_OFFSETS
 //#define DO_DATA
+#define DO_CODE
 #define DO_ALT_MESSAGES
 #define DO_CMT_CLEAR
 //#define DO_CUSTOM_DISABLE
 
-#define MMC_PRG_SET0	0xC5B8
+//#define MMC_PRG_SET0	0xC5B8
 
 static main(void) {
 	auto cdlFileName, cdlFile;
@@ -320,12 +321,14 @@ static main(void) {
 						if(byteread > 0)
 							byteread--;
 						if(opsize < 2) {
+#ifdef DO_CODE
 							if(isData(GetFlags(segeai)))
 								MakeUnknown(segeai, 3, DOUNK_SIMPLE);
 							if((opsize = MakeCode(segeai)) == 0) {
 								MakeUnknown(segeai, 3, DOUNK_SIMPLE);
 								opsize = MakeCode(segeai);
 							}
+#endif
 							lastop = Byte(segeai);
 							lastop = (lastop == 0x20); // || (lastop == 0x6C);
 							lastopaddr = (i + 3);

@@ -41,7 +41,7 @@ static make_auto_ofs16_nes(ea) {
 
 static auto_far_ptr() {
 	auto ea = ScreenEA();
-	auto_far_ptr_ex(ea,0,0);
+	auto_far_ptr_ex(ea,12,0);
 }
 
 static auto_far_ptr_ex(ea,mode,arg) {
@@ -51,38 +51,64 @@ static auto_far_ptr_ex(ea,mode,arg) {
 //	Message("far ptr at 0x%08x, mode %d, arg %d\n",ea,mode,arg);
 
 	if(mode==12) {
-//		wofs = Word(ea);
-//		bofs = Byte(ea + 2);
-//		MakeUnknown(ea, 4, DOUNK_SIMPLE);
-//		ea = make_offset_ex(ea, bofs, 0, 1);
-//		MakeWord(ea);
-//		ea = ea + 2;
-		auto newea; // = MK_FP(AskSelector(bofs + 1), 0) + wofs;
-		newea = ea;
-//		auto width = Byte(newea + 2);
-		auto width = 16;
-//		auto heigh = Byte(newea + 3);
-//		newea = make_data_array(newea, 4, "");
-//		for(cnt0 = 0; cnt0 < heigh; cnt0++) {
-			make_data_array(newea, width, "");
-			MakeStr(newea, newea + width);
-			MakeNameEx(newea,"",SN_CHECK|SN_NOWARN);
-			newea = newea + width;
-//		}
-		Jump(newea);
+//		ea = make_data_array(ea, 1, "");
+		ea = make_data_array(ea, 2, "");
+		cnt0 = Byte(ea);
+		ea = make_data_array(ea, 1, "");
+		for(cnt = 0; cnt < cnt0 / 4; cnt++)
+			ea = make_data_array(ea, 4, "");
+		ea = make_data_array(ea, 7, "");
+/*
+		ea = make_data_array(ea, 2, "");
+		cnt0 = Byte(ea);
+		ea = make_data_array(ea, 1, "");
+		for(cnt = 0; cnt < cnt0 / 8; cnt++)
+			ea = make_data_array(ea, 8, "");
+		ea = make_data_array(ea, 1, "");
+		ea = make_data_array(ea, 2, "");
+		cnt0 = Byte(ea);
+		cnt1 = Byte(ea+1);
+		ea = make_data_array(ea, 2, "");
+		for(cnt = 0; cnt < cnt1; cnt++)
+			ea = make_data_array(ea, cnt0, "");
+//*/
+		Jump(ea);
 	} else if(mode==11) {
-		auto num_lines = Byte(ea), startea = ea+1;
-		MakeUnknown(ea, 1, DOUNK_SIMPLE);
-		MakeByte(ea);
-		for(cnt0=0; cnt0<num_lines; cnt0++) {
-			cnt1=0;
-			while((Byte(startea+cnt1)!=0)&&(cnt1<16))cnt1++;
-			if(cnt1<16)cnt1++;
-			MakeUnknown(startea, cnt1, DOUNK_SIMPLE);
-			MakeStr(startea,startea+cnt1);
-			MakeNameEx(startea,"",SN_CHECK|SN_NOWARN);
-			startea=startea+cnt1;
+		auto startea = ea, stop = 0;
+
+		MakeName(ea, "");
+		MakeName(ea, form("_msg_res%08x",ea));
+
+		while(!stop) {
+			auto cmd = Byte(ea);
+//			Message("fetch %02x at 0x%08x\n",cmd, ea);
+			if((cmd==0)||(cmd&0xF0)) {	// characters + spaces
+				ea++;
+			} else {
+				if(startea != ea) {	// characters passed
+					make_data_array(startea, ea - startea, "");
+				}
+				if(cmd==1) {
+					ea = make_data_array(ea, 3, "");
+				} else if((cmd==2)||(cmd==8)||(cmd==9)||(cmd==0xA)) {
+					ea = make_data_array(ea, 1, "");
+				} else if((cmd==6)||(cmd==7)) {
+					ea = make_data_array(ea, 1, "");
+					stop = 1;
+				} else if((cmd==3)||(cmd==5)) {
+					ea = make_data_array(ea, 1, "");
+					ea = make_offset_ex(ea, bank0 - 1, 0, 1);
+				} else if((cmd==4)||(cmd==0xB)) {
+					ea = make_data_array(ea, 2, "");
+					ea = make_offset_ex(ea, bank0 - 1, 0, 1);
+				} else {
+					Message("unk cmd %02x at 0x%08x\n",cmd, ea);
+					stop = 1;
+				}
+				startea = ea;
+			}
 		}
+		Jump(ea);
 	} else if(mode==10) {
 		MakeUnknown(ea, 1, DOUNK_SIMPLE);
 		make_8bit_near_tbl(ea+1,ea+0,0,1);
@@ -297,8 +323,8 @@ static auto_far_ptr_ex(ea,mode,arg) {
 	// --
 	} else {
 ///* simple far link
-		bofs = 2;
-		wofs = 0;
+		bofs = 0;
+		wofs = 1;
 		size = 3;
 		MakeUnknown(ea, size, DOUNK_SIMPLE);
 		MakeByte(ea + bofs);
@@ -444,8 +470,6 @@ static make_name(ea, bank, name) {
 	MakeName(base + ptr, "");
 	MakeName(base + ptr, form("%s%X", name, base + ptr));
 }
-
-
 
 // BASE SYSTEM FUNCTIONS!
 
@@ -627,6 +651,7 @@ static make_8bit_near_tbl(loaddr, hiaddr, ofs, code) {
 	MakeUnknown(loaddr, size, DOUNK_SIMPLE);
 	MakeUnknown(hiaddr, size, DOUNK_SIMPLE);
 	Message(form("debug lo = %08x, hi = %08x\n",loaddr, hiaddr));
+
 	for(i=0; i<size; i++) {
 		auto lptr, hptr, base, bank, refptr;
 		lptr = Byte(loaddr + i);
@@ -634,12 +659,13 @@ static make_8bit_near_tbl(loaddr, hiaddr, ofs, code) {
 		refptr = lptr | (hptr << 8);
 		bank = GetReg(loaddr,"ds");
 		if(SegByName(form("ROM%X",0))==BADADDR) {	// NES mode
-			if(refptr < 0x8000)
-				base = MK_FP(AskSelector(0), 0);
+//			if(refptr < 0x8000)
+//				base = MK_FP(AskSelector(0), 0);
 //			else if(refptr < 0xC000)				// 16K banks
-//				base = MK_FP(AskSelector(bank), 0);
-			else
-				base = MK_FP(AskSelector(1), 0);
+				base = MK_FP(AskSelector(bank), 0);
+//				base = MK_FP(AskSelector(AskLong(1, "Enter External Bank") + 1), 0);
+//			else
+//				base = MK_FP(AskSelector(8), 0);
 		} else {
 			if(bank==0){
 				if(refptr<0x4000) {
@@ -841,10 +867,10 @@ static make_8bit_near_selection() {
 		sea = ScreenEA();
 		if(Word(sea)<0x8000)
 			b0 = 0;
-		else if(Word(sea)<0xE000)
+		else if(Word(sea)<0xC000)
 			b0 = GetReg(sea, "ds") - 1;
 		else
-			b0 = 0x3F;
+			b0 = 0x7;
 		Jump(make_offset_ex(sea, b0, 0, 1));
 	} else {
 		mea = (sea + eea) / 2;
@@ -1399,23 +1425,32 @@ static auto_rename_ptrs() {
 					MakeNameEx(extbase+ofs,nname,SN_CHECK|SN_NOWARN);
 				}
 			}
-		} else {									// NES mode (16x512K)
-			if(bank<0x20){
-				if(ofs<0xC000) {
-					MakeNameEx(base+ofs,nname,SN_CHECK|SN_NOWARN);
-				} else {
-					MakeNameEx(MK_FP(AskSelector(8), 0)+ofs,nname,SN_CHECK|SN_NOWARN);
-				}
-			} else {
-				if(ofs<0xC000) {
-					if(extbank==-1) {
-						extbank = AskLong(1, "Enter External Bank");
-						extbase = MK_FP(AskSelector(extbank), 0);
+		} else {
+			auto rom_mode = 1;
+			if(rom_mode == 0) {				// NES mode (16x8k)
+				if(bank<16){
+					if(ofs<0xC000) {
+						MakeNameEx(base+ofs,nname,SN_CHECK|SN_NOWARN);
+					} else if(ofs<0xE000) {
+						MakeNameEx(MK_FP(AskSelector(15), 0)+ofs,nname,SN_CHECK|SN_NOWARN);
+					} else {
+						MakeNameEx(MK_FP(AskSelector(16), 0)+ofs,nname,SN_CHECK|SN_NOWARN);
 					}
-					MakeNameEx(extbase+ofs,nname,SN_CHECK|SN_NOWARN);
 				} else {
-					MakeNameEx(MK_FP(AskSelector(8), 0)+ofs,nname,SN_CHECK|SN_NOWARN);
+					if(ofs<0xC000) {
+						if(extbank==-1) {
+							extbank = AskLong(1, "Enter External Bank");
+							extbase = MK_FP(AskSelector(extbank+1), 0);
+						}
+						MakeNameEx(extbase+ofs,nname,SN_CHECK|SN_NOWARN);
+					} if(ofs<0xE000) {
+						MakeNameEx(MK_FP(AskSelector(15), 0)+ofs,nname,SN_CHECK|SN_NOWARN);
+					} else {
+						MakeNameEx(MK_FP(AskSelector(16), 0)+ofs,nname,SN_CHECK|SN_NOWARN);
+					}
 				}
+			} else if(rom_mode == 1) {				// NES mode (32k banks)
+				MakeNameEx(base+ofs,nname,SN_CHECK|SN_NOWARN);
 			}
 		}
 		sea=sea+2;

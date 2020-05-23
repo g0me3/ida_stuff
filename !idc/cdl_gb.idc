@@ -13,8 +13,8 @@
 //#define CLEAR_UNUSED
 #define MMC_PRG_SET_DETECT
 #define MMC_PRG_PROC_DETECT
-//#define SWITCH_DETECT_A
-//#define SWITCH_DETECT_B
+#define SWITCH_DETECT_A
+#define SWITCH_DETECT_B
 //#define MMC_DEFAULT_BANK 1
 
 // ========MMC control values========
@@ -56,10 +56,10 @@
 
 // =======manual switch opcodes======
 //#define SWITCH_OPC 0xC7
-//#define SWITCH_OFS 0x325A
+//#define SWITCH_OFS 0x06C1
 
-//#define CUSTOM_TABLE_JUMP0 "FA ?? ?? 21 ?? ?? C7 E9"
-//#define CUSTOM_TABLE_JUMP_OFS0 4
+//#define CUSTOM_TABLE_JUMP0 "21 ?? ?? CD 5B 07"
+//#define CUSTOM_TABLE_JUMP_OFS0 1
 
 //#define CUSTOM_TABLE_JUMP1 "CB 27 21 ?? ?? CD ?? ?? 2A 66 6F E9"
 //#define CUSTOM_TABLE_JUMP_OFS1 3
@@ -249,7 +249,9 @@ static code_patterns(void) {
 	find_code("85 6F D0 24 C9",										"_hl_add_a");
 	find_code("85 6F 8C 95 67 C9",									"_hl_add_a");
 	find_code("85 6F 3E 00 8C 67 C9",								"_hl_add_a");
+	find_code("87 5F 16 00 19 2A 66 6F C9",							"_hl_add_a");
 	find_code("C5 06 00 4F 09 C1 C9",								"_hl_add_a");
+
 	find_code("D5 5F 16 00 CB 23 CB 12 19 5E 23 56 62 6B D1 C9",	"_hl_add_a_mul2_get_ptr_hl");
 	find_code("D5 5F 16 00 CB 23 CB 12 19 5E 23 66 6B D1 C9",		"_hl_add_a_mul2_get_ptr_hl");
 	find_code("87 ?? 2A 66 6F C9",									"_hl_add_a_mul2_get_ptr_hl");
@@ -453,10 +455,12 @@ static main(void) {
 
 		Message("Total Banks: %d\n", banksnum);
 
+		code_patterns();
+
 #ifdef MMC_PRG_PROC_DETECT
 		if(prgset == BADADDR) prgset = find_mmc_prg("EA ?? ?? EA ?? ?? C9",1, 4,	"_mmc_prg_set");
 		if(prgset == BADADDR) prgset = find_mmc_prg("21 ?? ?? 77 C9",1, 1,			"_mmc_prg_set");
-		if(prgset == BADADDR) prgset = find_mmc_prg("E0 ?? EA ?? ?? C9",3, 3,			"_mmc_prg_set");
+		if(prgset == BADADDR) prgset = find_mmc_prg("E0 ?? EA ?? ?? C9",3, 3,		"_mmc_prg_set");
 #endif
 
 #ifdef SWITCH_DETECT_B
@@ -581,7 +585,7 @@ static main(void) {
 								preea=segeai;
 							} else if(opcode==0xEA) {
 								auto tmp0 = Word(segeai+1);
-								if((ctype < 4)||(ctype==0xFF)) {	// MBC 1
+								if((ctype < 4)||(ctype==0xFF)||(ctype==0x1B)) {	// MBC 1
 									if((tmp0>=0x2000)&&(tmp0<0x4000)) {
 										if((segeai-preea)<PRG_CMD_SIZE) {
 											curbank = prebank;
@@ -1163,7 +1167,7 @@ static main(void) {
 			Message("mmc prg bank set operations detected!\n");
 		}
 
-		code_patterns();
+//		code_patterns();
 
 		if(farcall_s>0)
 			Message("far calls summary: %d has found\n",farcall_s);

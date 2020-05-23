@@ -51,7 +51,7 @@ static far_ptr_search() {
 static main(void) {
 
 //	                   opcode,  size, segmask, bankop, ofsop, delta, shift, dobankbyte
-	parametric_farcall("20 D6 F7", 3,    0x3F,      5,     3,    -1,     0, 1);
+//	parametric_farcall("20 D6 F7", 3,    0x3F,      5,     3,    -1,     0, 1);
 //	parametric_farcall("20 05 D8", 3,    0x3F,      5,     3,     0,     0, 1);
 //	parametric_farcall("CD A7 05", 3,    0x3F,      5,     3,     0,     0, 1);
 //	parametric_farcall("CD 62 21", 3,    0x3F,      5,     3,     0,     0, 1);
