@@ -8,16 +8,17 @@
 // All-Pro Basketball / Zenbei!! Pro Basket
 // Amagon / Totsuzen! Machoman
 // Batsu & Terii
-// Chuugoku Senseijutsu
 // Chitei Senkuu Vazolder
 // Chuugoku Senseijutsu
-// Dokuganryuu Masamune
+// Chuugoku Senseijutsu
 // Daisenryaku
+// Dokuganryuu Masamune
 // Flying Hero
 // Hoops / Moero!! Junior Basket - Two on Two
 // Seiryaku Simulation - Inbou no Wakusei - Shancara
 // Taito Basketball / Ultimate Basketball
 // Takeshi no Sengoku Fuuunji
+// Totsuzen! Machoman
 //
 // == same engine and script language, but different data format ==
 //
@@ -45,22 +46,24 @@
 //	0x10B9F
 //	0x10BB9
 //	0x10BCB
+//  these tracks are present in Totsuzen! Machoman and Amagon, need to figure out
+//  where they actually used.
 //
 // == known games with engines based on this but slightly modified ==
 //
 // Armadillo
 // Battle Baseball
-// Hissatsu Shigoto Nin
-// Times of Lore
-// Columbus - Ougon no Yoake
 // Chiyonofuji no Ooichou
+// Columbus - Ougon no Yoake
 // Great Battle Cyber
+// Hissatsu Shigoto Nin
 // Kyouryuu Sentai Zyuranger
 // Mappy Kids
 // Pizza Pop!
 // Rolling Thunder
 // SD Sengoku Bushou Retsuden: Rekka no Gotoku Tenka o Tore!
 // Shufflepuck Cafe
+// Times of Lore
 //
 
 // ----------------------------
