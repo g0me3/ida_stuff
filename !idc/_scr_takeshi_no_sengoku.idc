@@ -8,8 +8,6 @@
 // All-Pro Basketball / Zenbei!! Pro Basket
 // Amagon / Totsuzen! Machoman
 // Batsu & Terii
-// Chitei Senkuu Vazolder
-// Chuugoku Senseijutsu
 // Chuugoku Senseijutsu
 // Daisenryaku
 // Dokuganryuu Masamune
@@ -22,7 +20,7 @@
 //
 // == same engine and script language, but different data format ==
 //
-// Meiji Ishin (same script language, but different data header)
+// Meiji Ishin (different track header)
 //
 // == same same data format but little bit different script commands (E1/E3) ==
 //
