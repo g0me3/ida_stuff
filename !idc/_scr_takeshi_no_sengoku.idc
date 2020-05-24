@@ -16,7 +16,6 @@
 // Seiryaku Simulation - Inbou no Wakusei - Shancara
 // Taito Basketball / Ultimate Basketball
 // Takeshi no Sengoku Fuuunji
-// Totsuzen! Machoman
 //
 // == same engine and script language, but different data format ==
 //
@@ -44,8 +43,8 @@
 //	0x10B9F
 //	0x10BB9
 //	0x10BCB
-//  these tracks are present in Totsuzen! Machoman and Amagon, need to figure out
-//  where they actually used.
+//  these tracks are from Amagon / Totsuzen! Machoman where they are used, but since
+//  the script language has changed, some of tunes does not play or sounds differently.
 //
 // == known games with engines based on this but slightly modified ==
 //
@@ -185,10 +184,10 @@ static take_snd_lib_parse(void) {
 	auto seg = GetReg(ea,"ds") - 1;
 	auto base = MK_FP(AskSelector(seg + 1), 0);
 	if(ea != BADADDR) {
-//		ptr_ea = Word(ea) + base;	// for ptr table
-//		auto tmpname = get_offset_name(ea, seg);
-		ptr_ea = ea;				// for RAW
-		auto tmpname = get_address_name(ea, seg);
+		ptr_ea = Word(ea) + base;	// for ptr table
+		auto tmpname = get_offset_name(ea, seg);
+//		ptr_ea = ea;				// for RAW
+//		auto tmpname = get_address_name(ea, seg);
 		auto cnt = Byte(ptr_ea);
 		ptr_ea = make_data_array(ptr_ea,1,"");
 		auto chnl = 0;
