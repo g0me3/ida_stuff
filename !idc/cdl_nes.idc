@@ -13,7 +13,7 @@
 //#define MMC_PRG_SET0	0xC5B8
 
 static main(void) {
-	auto cdlFileName, cdlFile;
+	auto cdlFileName, cdlFile, cdlOpen;
 	cdlFileName = getCdlFilename();
 
 	MakeNames();
@@ -23,8 +23,16 @@ static main(void) {
 		cdlFileName = AskFile(0,"*.cdl","Choose a CDL-file Manually");
 		cdlFile = fopen(cdlFileName, "rb");
 	}
+	if( cdlFile != 0 ) {
+		Message("CDL file \"%s\" opened succesfull!\n", cdlFileName, segsize);
+		cdlOpen = 1;
+	} else {
+		cdlOpen = 0;
+	}
 
-	if (cdlFile != 0) {
+
+//	if (cdlFile != 0)
+	{
 		auto cd, ncd, secondpass = 0;
 		auto seg = 1, segea, segea_orig, segsize, segorg, segorgmask;
 		auto codelog = 0, datalog = 0, pcmlog = 0, unusedlog = 0;
@@ -34,10 +42,7 @@ static main(void) {
 
 		segsize = getSegSize(seg);
 		segorgmask = ~(segsize - 1);
-
-		Message("CDL file \"%s\" opened succesfull, segment size = 0x%x\n", cdlFileName, segsize);
-
-		Message("SEG analyze start\n");
+		Message("SEG analyze start (seg size = 0x%x)\n", segsize);
 
 		auto segcount = 1, onesingleseg = 0, onesingleorg = 0, miltisingleorg = 0;
 		auto segs6 = 0, seg6 = 0;
@@ -136,7 +141,10 @@ static main(void) {
 //#endif
 				if(secondpass == 0) {
 					if(!ncd) {
-						cd = fgetc(cdlFile);
+						if(cdlOpen == 1)
+							cd = fgetc(cdlFile);
+						else
+							cd = 0;
 //						Message("adr=%04x byte=%02x\n",segea+i,cd);
 //#ifdef DO_CUSTOM_DISABLE
 //						if((segeai>=0xA074C)&&(segeai<=0xA0A67))
@@ -197,7 +205,10 @@ static main(void) {
 								ofst = Byte(segeai);
 								byteread++;
 							}
-							cd = fgetc(cdlFile);
+							if(cdlOpen == 1)
+								cd = fgetc(cdlFile);
+							else
+								cd = 0;
 //							Message("adr=%04x byte=%02x\n",segea+i,cd);
 //#ifdef DO_CUSTOM_DISABLE
 //							if((segeai>=0xA074C)&&(segeai<=0xA0A67))
@@ -280,7 +291,10 @@ static main(void) {
 								ofst = Byte(segeai);
 								byteread++;
 							}
-							cd = fgetc(cdlFile);
+							if(cdlOpen == 1)
+								cd = fgetc(cdlFile);
+							else
+								cd = 0;
 //							Message("adr=%04x byte=%02x\n",segea+i,cd);
 //#ifdef DO_CUSTOM_DISABLE
 //							if((segeai>=0xA074C)&&(segeai<=0xA0A67))
@@ -418,8 +432,8 @@ static main(void) {
 #ifdef DO_CODE_OFFSETS
 							if(opmasked < 0x6000)
 								OpOff(segeai,0,0);
-							else if(opmasked == segorg)
-								OpOff(segeai,0,MK_FP(AskSelector(seg),0));
+//							else if(opmasked == segorg)
+//								OpOff(segeai,0,MK_FP(AskSelector(seg),0));
 							else if(miltisingleorg > 1)
 								makeOffsetMulti(opmasked, segeai, seg6, seg8, segA, segC, segE, segsmask);
 							else if((miltisingleorg == 1)&&(opmasked == onesingleorg))

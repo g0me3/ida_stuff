@@ -32,19 +32,94 @@ static script_convert0() {
 	Jump(ea);
 }
 
-static far_ptr_search() {
-	auto ea = -1;
-	auto bank_ofs = 9;
-	auto wl_ofs = 1;
-	auto wh_ofs = 5;
-	Message("search start\n");
-	while((ea=FindBinary(ea+1, SEARCH_DOWN, "A9 ?? 85 08 A9 ?? 85 09 A9 ?? 20 01 C5"))!=BADADDR) {
-		Message("found pattern at 0x%08x\n",ea);
-		auto temp0 = MK_FP(AskSelector(Byte(ea + bank_ofs) + 1), 0);
-		auto temp1 = Byte(ea + wl_ofs)|(Byte(ea + wh_ofs) << 8);
-		OpOffEx(ea + wl_ofs - 1, 0, REF_LOW8, temp0 + temp1, temp0, 0);
-		OpOffEx(ea + wh_ofs - 1, 0, REF_HIGH8, temp0 + temp1, temp0, 0);
+static far_sys_call_search(pat, b0, b1, instr) {
+	auto ea = -1, temp0, temp1;
+	while((ea=FindBinary(ea+1, SEARCH_DOWN, pat))!=BADADDR) {
+		Message("found pattern at 0x%08x\n", ea);
+		temp0 = MK_FP(AskSelector(Byte(ea + b1) + 1), 0);
+		temp1 = temp0 + Word(temp0 + (Byte(ea + b0) + 0x8001));
+//		MakeUnknown(ea, 2, DOUNK_SIMPLE);
+//		MakeCode(ea);
+		SetManualInsn(ea, form("%s    %s", instr, Name(temp1)));
+		make_data_array(ea + 2, ((strlen(pat) + 1) / 3) - 2, "");
+		SetManualInsn(ea + 2, "ENDM");
+		AddCodeXref(ea, temp1, fl_CF|XREF_USER);
 	}
+}
+
+static custom_call_search(pat, b_lo, b_hi, c, d, instr) {
+	auto ea = -1, temp0, temp1;
+	while((ea=FindBinary(ea+1, SEARCH_DOWN, pat))!=BADADDR) {
+		auto bank = GetReg(ea, "ds");
+		Message("found pattern at 0x%08x\n", ea);
+		temp0 = Byte(ea + b_lo) | (Byte(ea + b_hi) << 8);
+		if(temp0 >=0xC000)
+			bank = 15 + 1;
+		temp1 = MK_FP(AskSelector(bank), 0) + temp0;
+//		MakeUnknown(ea, 2, DOUNK_SIMPLE);
+//		MakeCode(ea);
+		if((c == -1) && (d == -1))
+			SetManualInsn(ea, form(instr, Name(temp1)));
+		else
+			SetManualInsn(ea, form(instr, Name(temp1), Byte(ea + c), Byte(ea + d)));
+		make_data_array(ea + 2, ((strlen(pat) + 1) / 3) - 2, "");
+		SetManualInsn(ea + 2, "ENDM");
+		add_dref(ea, temp1, dr_O|XREF_USER);
+	}
+}
+
+static custom_call_search_ex(pat, b_lo, b_hi, c, d, e, f, instr) {
+	auto ea = -1, temp0, temp1;
+	while((ea=FindBinary(ea+1, SEARCH_DOWN, pat))!=BADADDR) {
+		auto bank = GetReg(ea, "ds");
+		Message("found pattern at 0x%08x\n", ea);
+		temp0 = Byte(ea + b_lo) | (Byte(ea + b_hi) << 8);
+		if(temp0 >=0xC000)
+			bank = 15 + 1;
+		temp1 = MK_FP(AskSelector(bank), 0) + temp0;
+//		MakeUnknown(ea, 2, DOUNK_SIMPLE);
+//		MakeCode(ea);
+		if((c == -1) && (d == -1))
+			SetManualInsn(ea, form(instr, Name(temp1)));
+		else
+			SetManualInsn(ea, form(instr, Name(temp1), Byte(ea + c), Byte(ea + d), Byte(ea + e), Byte(ea + f)));
+		make_data_array(ea + 2, ((strlen(pat) + 1) / 3) - 2, "");
+		SetManualInsn(ea + 2, "ENDM");
+		add_dref(ea, temp1, dr_O|XREF_USER);
+	}
+}
+
+static far_ptr_search() {
+	auto ea, temp0, temp1;
+	Message("search start\n");
+//	far_sys_call_search("A9 ?? 85 58 A9 ?? 85 59 20 0B CC", 1, 5, "FJSR");	// dragon ball z
+//	far_sys_call_search("A9 ?? 85 58 A9 ?? 8D 59 00 20 0B CC", 1, 5, "FJSR");
+//	far_sys_call_search("A9 ?? 85 58 A9 ?? 85 59 4C 0B CC", 1, 5, "FJMP");
+
+//	far_sys_call_search("A9 ?? 85 46 A9 ?? 85 47 20 E7 CA", 1, 5, "FJSR");	// you you hakusho
+//	far_sys_call_search("A9 ?? 85 46 A9 ?? 85 47 4C E7 CA", 1, 5, "FJMP");
+//	custom_call_search("A9 ?? 85 10 A9 ?? 85 11 A9 00 85 00 85 01 A9 FF 85 05 85 06 20 3F D1", 1, 5, -1, -1,       "PPUS    %s,00,00,FF,FF");
+//	custom_call_search("A9 ?? 85 10 A9 ?? 85 11 A9 FF 85 00 85 01 85 05 85 06 20 3F D1", 1, 5, -1, -1,             "PPUS    %s,FF,FF,FF,FF");
+//	custom_call_search("A9 ?? 85 10 A9 ?? 85 11 A9 ?? 85 00 A9 ?? 85 01 A9 FF 85 05 85 06 20 3F D1", 1, 5, 9, 13,  "PPUS    %s,%02x,%02x,FF,FF");
+//	custom_call_search("A9 ?? 85 10 A9 ?? 85 11 A9 00 85 00 85 01 A9 FF 85 05 85 06 20 B0 D1", 1, 5, -1, -1,       "PPUQ    %s,00,00,FF,FF");
+//	custom_call_search("A9 ?? 85 10 A9 ?? 85 11 A9 FF 85 00 85 01 85 05 85 06 20 B0 D1", 1, 5, -1, -1,             "PPUQ    %s,FF,FF,FF,FF");
+//	custom_call_search("A9 ?? 85 10 A9 ?? 85 11 A9 ?? 85 00 A9 ?? 85 01 A9 FF 85 05 85 06 20 B0 D1", 1, 5, 9, 13,  "PPUQ    %s,%02x,%02x,FF,FF");
+
+//	far_sys_call_search("A9 ?? 85 4B A9 ?? 85 4C 20 75 CC", 1, 5, "FJSR");	// j league
+//	far_sys_call_search("A9 ?? 85 4B A9 ?? 85 4C 4C 75 CC", 1, 5, "FJMP");
+//	custom_call_search("A9 ?? 85 10 A9 ?? 85 11 A9 00 85 00 85 01 A9 FF 85 05 85 06 20 84 D2", 1, 5, -1, -1,       "PPUS    %s,00,00,FF,FF");
+//	custom_call_search("A9 ?? 85 10 A9 ?? 85 11 A9 FF 85 00 85 01 85 05 85 06 20 84 D2", 1, 5, -1, -1,             "PPUS    %s,FF,FF,FF,FF");
+//	custom_call_search("A9 ?? 85 10 A9 ?? 85 11 20 54 81", 1, 5, -1, -1,             							   "PPUS    %s,FF,FF,FF,FF");
+//	custom_call_search("A9 ?? 85 10 A9 ?? 85 11 A9 ?? 85 00 A9 ?? 85 01 A9 FF 85 05 85 06 20 84 D2", 1, 5, 9, 13,  "PPUS    %s,%02x,%02x,FF,FF");
+//	custom_call_search("A9 ?? 85 10 A9 ?? 85 11 A9 ?? 85 01 A9 ?? 85 00 A9 FF 85 05 85 06 20 84 D2", 1, 5, 13, 9,  "PPUS    %s,%02x,%02x,FF,FF");
+//	custom_call_search("A9 ?? 85 10 A9 ?? 85 11 A9 00 85 00 85 01 A9 FF 85 05 85 06 20 F5 D2", 1, 5, -1, -1,       "PPUQ    %s,00,00,FF,FF");
+//	custom_call_search("A9 ?? 85 10 A9 ?? 85 11 A9 FF 85 00 85 01 85 05 85 06 20 F5 D2", 1, 5, -1, -1,             "PPUQ    %s,FF,FF,FF,FF");
+//	custom_call_search("A9 ?? 85 10 A9 ?? 85 11 A9 ?? 85 00 A9 ?? 85 01 A9 FF 85 05 85 06 20 F5 D2", 1, 5, 9, 13,  "PPUQ    %s,%02x,%02x,FF,FF");
+//	custom_call_search_ex("A9 ?? 85 10 A9 ?? 85 11 A9 ?? 85 00 A9 ?? 85 01 A9 ?? 85 05 A9 ?? 85 06 20 84 D2", 1, 5, 9, 13, 17, 21, "PPUQ    %s,%02x,%02x,FF,FF");
+
+	far_sys_call_search("A9 ?? 85 56 A9 ?? 85 57 20 BA CC", 1, 5, "FJSR");	// ultraman
+	far_sys_call_search("A9 ?? 85 56 A9 ?? 85 57 4C BA CC", 1, 5, "FJMP");
+
 	Message("search is over\n");
 }
 
@@ -56,15 +131,15 @@ static main(void) {
 //	parametric_farcall("CD A7 05", 3,    0x3F,      5,     3,     0,     0, 1);
 //	parametric_farcall("CD 62 21", 3,    0x3F,      5,     3,     0,     0, 1);
 
-//	parametric_fixsize("CD A2 0F", 1);
-//	parametric_fixsize("CD 03 08", 8);
-//	parametric_fixsize("CD 74 04", 4);
+//	parametric_fixsize("20 70 D7", 2);
+//	parametric_fixsize("20 76 D7", 2);
+//	parametric_fixsize("20 7C D7", 2);
 //	parametric_fixsize("CD 28 1B", 1);
 //	parametric_fixsize("CD 12 46", 10);
 
-//	parametric_switch("20 34 EC");
+//	parametric_switch("20 13 CB");
 
-//	parametric_fixsize("20 E1 97", 2);
+//	parametric_fixsize("20 C6 B0", 5);
 //	parametric_fixsize("20 73 DD", 2);
 //	parametric_fixsize("20 89 DD", 2);
 //	parametric_fixsize("20 92 DD", 2);
@@ -140,7 +215,7 @@ static main(void) {
 
 	garbage_collector();
 
-//	far_ptr_search();
+	far_ptr_search();
 
 //	SetCharPrm(INF_GENFLAGS,INFFL_LZERO|INFFL_ALLASM);	// generate leading zeroes in numbers
 //		makevarnotlove(0x5100,"_MMC5_PRG_SIZE",1);

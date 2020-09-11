@@ -5,7 +5,7 @@
 // ======main control flags=======
 //#define START_MAKE_CODE_EA 0x100
 
-#define MAKE_OFFSETS
+//#define MAKE_OFFSETS
 //#define MAKE_CODE_UNK
 //#define MAKE_CODE_UNK_BYTE
 //#define MAKE_DATA_BYTE
@@ -13,16 +13,16 @@
 //#define CLEAR_UNUSED
 #define MMC_PRG_SET_DETECT
 #define MMC_PRG_PROC_DETECT
-#define SWITCH_DETECT_A
+//#define SWITCH_DETECT_A
 #define SWITCH_DETECT_B
 //#define MMC_DEFAULT_BANK 1
 
 // ========MMC control values========
 #define PRG_CMD_SIZE 10
 
-//#define MMC_SET_OFS0 0x0a3c
+#define MMC_SET_OFS0 0x0457
 //#define MMC_SET_OFS1 0x0a5a
-//#define MMC_RESTORE_OFS 0x0a4a
+#define MMC_RESTORE_OFS 0x3F22
 
 //#define MMC_SET_OPC0 0xC7
 //#define MMC_SET_OPC1 0xEF
@@ -39,19 +39,19 @@
 
 //#define MMC_PRG1_PROC 0x0334
 //#define MMC_PRG2_PROC 0x341
-//#define MMC_PRG3_PROC MMC_PRG2_PROC+5
+#define MMC_PRG3_PROC 0x627
 //#define MMC_PRG4_PROC MMC_PRG3_PROC+5
 //#define MMC_PRG5_PROC MMC_PRG4_PROC+5
 //#define MMC_PRG6_PROC MMC_PRG5_PROC+5
 //#define MMC_PRG7_PROC MMC_PRG6_PROC+5
 
-//#define MMC_PRG8_PROC MMC_PRG7_PROC+5
-//#define MMC_PRG9_PROC MMC_PRG8_PROC+5
-//#define MMC_PRGA_PROC MMC_PRG9_PROC+5
+#define MMC_PRG8_PROC 0x62C
+#define MMC_PRG9_PROC 0x631
+//#define MMC_PRGA_PROC 0x631
 //#define MMC_PRGB_PROC MMC_PRGA_PROC+5
-//#define MMC_PRGC_PROC MMC_PRGB_PROC+5
-//#define MMC_PRGD_PROC MMC_PRGC_PROC+5
-//#define MMC_PRGE_PROC MMC_PRGD_PROC+5
+#define MMC_PRGC_PROC 0x636
+#define MMC_PRGD_PROC 0x63B
+#define MMC_PRGE_PROC 0x640
 //#define MMC_PRGF_PROC MMC_PRGE_PROC+5
 
 // =======manual switch opcodes======
@@ -315,8 +315,9 @@ static code_patterns(void) {
 #ifdef SWITCH_DETECT_A
 	cnt = 0;
 	cnt = find_table_jumps("06 00 21 ?? ?? 09 09 2A 66 6F E9", 			3, cnt);
-	cnt = find_table_jumps("06 00 4F CB 21 21 ?? ?? 09 2A 66 6F E9", 	6, cnt);
-	cnt = find_table_jumps("07 4F 06 00 21 ?? ?? 09 2A 66 6F E9",		5, cnt);
+	cnt = find_table_jumps("21 ?? ?? 09 2A 66 6F E9", 					1, cnt);
+//	cnt = find_table_jumps("06 00 4F CB 21 21 ?? ?? 09 2A 66 6F E9", 	6, cnt);
+//	cnt = find_table_jumps("07 4F 06 00 21 ?? ?? 09 2A 66 6F E9",		5, cnt);
 	cnt = find_table_jumps("11 ?? ?? 19 11 ?? ?? D5 2A 66 6F E9", 		1, cnt);
 	cnt = find_table_jumps("21 ?? ?? 06 00 FA ?? ?? 4F CB 21 CB 10 09 2A 66 6F E9",	1, cnt);
 	cnt = find_table_jumps("21 ?? ?? 06 00 4F CB 21 CB 10 09 2A 66 6F E9",	1, cnt);
@@ -331,19 +332,21 @@ static code_patterns(void) {
 	cnt = find_table_jumps("21 ?? ?? 85 6F 30 01 24 5E 23 56 D5 E1 E9",	1, cnt);
 	cnt = find_table_jumps("21 ?? ?? 19 2A 47 7E 67 68 E9", 			1, cnt);
 	cnt = find_table_jumps("21 ?? ?? 19 2A 66 6F 11 ?? ?? D5 E9",		1, cnt);
-	cnt = find_table_jumps("21 ?? ?? 19 2A 66 6F E9", 					1, cnt);
+//	cnt = find_table_jumps("21 ?? ?? 19 2A 66 6F E9", 					1, cnt);		// portal runner use this pattern in a different way
 	cnt = find_table_jumps("21 ?? ?? 87 4F 06 00 09 2A 66 6F E9",		1, cnt);
 	cnt = find_table_jumps("21 ?? ?? 87 85 30 01 24 6F 2A 66 6F E9", 	1, cnt);
 	cnt = find_table_jumps("21 ?? ?? 87 85 6F 3E 00 8C 67 2A 66 6F E9", 1, cnt);
 	cnt = find_table_jumps("21 ?? ?? FA ?? ?? 87 4F 06 00 09 2A 66 6F E9",	1, cnt);
-	cnt = find_table_jumps("29 01 ?? ?? 09 2A 66 6F E9",				2, cnt);
-	cnt = find_table_jumps("29 11 ?? ?? 19 2A 66 6F E9",				2, cnt);
-	cnt = find_table_jumps("4A CB 21 06 00 21 ?? ?? 09 2A 66 6F E9",	6, cnt);
-	cnt = find_table_jumps("4F 06 00 21 ?? ?? 09 2A 66 6F E9", 			4, cnt);
+	cnt = find_table_jumps("01 ?? ?? 09 2A 66 6F E9",					1, cnt);
+//	cnt = find_table_jumps("CB 27 6F AF 67 01 ?? ?? 09 2A 66 6F E9",	6, cnt);
+	cnt = find_table_jumps("11 ?? ?? 19 2A 66 6F E9",					1, cnt);
+//	cnt = find_table_jumps("CB 25 11 ?? ?? 19 2A 66 6F E9",				3, cnt);
+//	cnt = find_table_jumps("4A CB 21 06 00 21 ?? ?? 09 2A 66 6F E9",	6, cnt);
+//	cnt = find_table_jumps("4F 06 00 21 ?? ?? 09 2A 66 6F E9", 			4, cnt);
 	cnt = find_table_jumps("4F 06 00 21 ?? ?? 09 09 2A 66 6F C9",		4, cnt);
 	cnt = find_table_jumps("4F 21 ?? ?? 09 2A 66 6F 11 ?? ?? D5 E9",	2, cnt);
-	cnt = find_table_jumps("4F 21 ?? ?? 09 2A 66 6F E9",				2, cnt);
-	cnt = find_table_jumps("4F CB 21 06 00 21 ?? ?? 09 2A 66 6F E9", 	6, cnt);
+//	cnt = find_table_jumps("4F 21 ?? ?? 09 2A 66 6F E9",				2, cnt);
+//	cnt = find_table_jumps("4F CB 21 06 00 21 ?? ?? 09 2A 66 6F E9", 	6, cnt);
 	cnt = find_table_jumps("5F 21 ?? ?? 19 2A 66 6F 01 ?? ?? C5 E9",	2, cnt);
 	cnt = find_table_jumps("5F CB 23 16 00 21 ?? ?? 19 5E 23 56 D5 C9", 6, cnt);
 	cnt = find_table_jumps("87 06 00 4F 21 ?? ?? 09 2A 66 6F E5 C9",	5, cnt);
@@ -351,18 +354,18 @@ static code_patterns(void) {
 	cnt = find_table_jumps("87 21 ?? ?? 85 30 01 24 6F 2A 66 6F E9", 	2, cnt);
 	cnt = find_table_jumps("87 21 ?? ?? 85 6F 30 01 24 2A 66 6F E9", 	2, cnt);
 	cnt = find_table_jumps("87 21 ?? ?? CD ?? ?? 2A 66 6F E9", 			2, cnt);
-	cnt = find_table_jumps("87 4F 06 00 21 ?? ?? 09 2A 66 6F E9", 		5, cnt);
+//	cnt = find_table_jumps("87 4F 06 00 21 ?? ?? 09 2A 66 6F E9", 		5, cnt);
 	cnt = find_table_jumps("87 4F 06 00 21 ?? ?? 09 4E 23 46 C5 E1 E9",	5, cnt);
 	cnt = find_table_jumps("87 5F 16 00 21 ?? ?? 19 2A 56 6F 62 E9",	5, cnt);
 	cnt = find_table_jumps("87 5F 16 00 21 ?? ?? 19 5E 23 56 D5 E1 E9", 5, cnt);
 	cnt = find_table_jumps("87 6F 26 00 01 ?? ?? 09 2A 66 6F ?? ?? ?? ?? E9", 	5, cnt);
-	cnt = find_table_jumps("87 6F 26 00 01 ?? ?? 09 2A 66 6F E9", 		5, cnt);
+//	cnt = find_table_jumps("87 6F 26 00 01 ?? ?? 09 2A 66 6F E9", 		5, cnt);
 	cnt = find_table_jumps("87 6F 26 00 11 ?? ?? 19 2A 66 6F ?? ?? ?? ?? ?? E9", 		5, cnt);
-	cnt = find_table_jumps("87 6F 26 00 11 ?? ?? 19 2A 66 6F E9",		5, cnt);
+//	cnt = find_table_jumps("87 6F 26 00 11 ?? ?? 19 2A 66 6F E9",		5, cnt);
 	cnt = find_table_jumps("87 C5 4F 06 00 21 ?? ?? 09 C1 2A 66 6F E9", 6, cnt);
-	cnt = find_table_jumps("CB 21 21 ?? ?? 09 2A 66 6F E9",			    3, cnt);
+//	cnt = find_table_jumps("CB 21 21 ?? ?? 09 2A 66 6F E9",			    3, cnt);
 	cnt = find_table_jumps("CB 27 4F 06 00 21 ?? ?? 09 2A 47 7E 67 68 E9", 	6, cnt);
-	cnt = find_table_jumps("CB 27 4F 06 00 21 ?? ?? 09 2A 66 6F E9",	6, cnt);
+//	cnt = find_table_jumps("CB 27 4F 06 00 21 ?? ?? 09 2A 66 6F E9",	6, cnt);
 	cnt = find_table_jumps("CB 27 4F 06 00 21 ?? ?? 09 4E 23 46 E1 C5 C9",	6, cnt);
 	cnt = find_table_jumps("E5 16 00 21 ?? ?? 19 5E 23 56 E1 D5 C9",	4, cnt);
 	cnt = find_table_jumps("F5 21 ?? ?? 19 2A 66 6F F1 E9",				2, cnt);
@@ -585,7 +588,7 @@ static main(void) {
 								preea=segeai;
 							} else if(opcode==0xEA) {
 								auto tmp0 = Word(segeai+1);
-								if((ctype < 4)||(ctype==0xFF)||(ctype==0x1B)) {	// MBC 1
+								if((ctype < 4)||(ctype==0xFF)||(ctype==0x19)||(ctype==0x1B)) {	// MBC 1
 									if((tmp0>=0x2000)&&(tmp0<0x4000)) {
 										if((segeai-preea)<PRG_CMD_SIZE) {
 											curbank = prebank;

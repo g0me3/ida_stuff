@@ -28,36 +28,38 @@ static make_auto_ofs16_nes(ea) {
 	auto ofs = Word(ea), bank = GetReg(ea,"ds")-1;
 	if(ofs<0x800)
 		ea = make_offset_ex(ea, 0, 0, 1);
-	else if(ofs>=0xC000) {
+	else
+		ea = make_offset_ex(ea, bank, 0, 1);
+/*	else if(ofs>=0xC000) {
 		ea = make_offset_ex(ea, 7, 0, 1);
 	} else {
 		if((bank==7)&&(ofs<0xC000)) {
 			ea = make_offset_ex(ea, AskLong(0, "Enter Bank Nunber"), 0, 1);
 		} else
 			ea = make_offset_ex(ea, bank, 0, 1);
-	}
+	}*/
 	return ea;
 }
 
 static auto_far_ptr() {
 	auto ea = ScreenEA();
-	auto_far_ptr_ex(ea,12,0);
+	auto_far_ptr_ex(ea,0,0);
 }
 
 static auto_far_ptr_ex(ea,mode,arg) {
-	auto bofs, wofs, base, size, cnt, cnt0, cnt1;
+	auto bofs, wofs, base, size, cnt, cnt0, cnt1, tmp1;
 	auto bank0 = GetReg(ea,"ds");
 
 //	Message("far ptr at 0x%08x, mode %d, arg %d\n",ea,mode,arg);
 
 	if(mode==12) {
 //		ea = make_data_array(ea, 1, "");
-		ea = make_data_array(ea, 2, "");
-		cnt0 = Byte(ea);
-		ea = make_data_array(ea, 1, "");
-		for(cnt = 0; cnt < cnt0 / 4; cnt++)
-			ea = make_data_array(ea, 4, "");
-		ea = make_data_array(ea, 7, "");
+//		ea = make_data_array(ea, 2, "");
+//		cnt0 = Byte(ea);
+//		ea = make_data_array(ea, 1, "");
+//		for(cnt = 0; cnt < cnt0 / 4; cnt++)
+//			ea = make_data_array(ea, 4, "");
+//		ea = make_data_array(ea, 7, "");
 /*
 		ea = make_data_array(ea, 2, "");
 		cnt0 = Byte(ea);
@@ -72,7 +74,87 @@ static auto_far_ptr_ex(ea,mode,arg) {
 		for(cnt = 0; cnt < cnt1; cnt++)
 			ea = make_data_array(ea, cnt0, "");
 //*/
-		Jump(ea);
+/*
+		auto bank1 = Byte(ea);
+		base = MK_FP(AskSelector(bank1 + 1), 0);
+		MakeByte(ea);
+
+		MakeUnknown(ea + 1, 8, DOUNK_SIMPLE);
+
+		MakeWord(ea + 1);
+		OpOffEx(ea + 1, 0, REF_OFF16, -1, base, 0);
+		tmp1 = Word(ea + 1);
+		MakeCode(base + tmp1);
+		AutoMark(base + tmp1, AU_CODE);
+		Wait();
+
+		MakeWord(ea + 3);
+		OpOffEx(ea + 3, 0, REF_OFF16, -1, base, 0);
+		tmp1 = Word(ea + 3);
+		MakeCode(base + tmp1);
+		AutoMark(base + tmp1, AU_CODE);
+		Wait();
+
+		MakeWord(ea + 5);
+		OpOffEx(ea + 5, 0, REF_OFF16, -1, base, 0);
+		tmp1 = Word(ea + 5);
+		MakeCode(base + tmp1);
+		AutoMark(base + tmp1, AU_CODE);
+		Wait();
+
+		MakeWord(ea + 7);
+		OpOffEx(ea + 7, 0, REF_OFF16, -1, base, 0);
+		tmp1 = Word(ea + 7);
+		MakeCode(base + tmp1);
+		AutoMark(base + tmp1, AU_CODE);
+		Wait();
+
+		Jump(ea + 9);
+*/
+/*
+		ea = make_data_array(ea, 2, "");
+		MakeUnknown(ea, 6, DOUNK_SIMPLE);
+		auto bank1 = Byte(ea);
+		base = MK_FP(AskSelector(bank1 + 1), 0);
+		MakeByte(ea);
+		MakeWord(ea + 1);
+		OpOffEx(ea + 1, 0, REF_OFF16, -1, base, 0);
+
+		bank1 = Byte(ea + 3);
+		base = MK_FP(AskSelector(bank1 + 1), 0);
+		MakeByte(ea + 3);
+		MakeWord(ea + 4);
+		OpOffEx(ea + 4, 0, REF_OFF16, -1, base, 0);
+
+		Jump(ea + 6);
+*/
+///*
+			auto temp0 = MK_FP(AskSelector(Byte(ea + 0) + 1), 0);
+			auto temp0A = temp0 + (Byte(ea + 1) << 1) + 0x8001;
+			auto temp1 = temp0 + Word(temp0A);
+			make_data_array(ea, 2, "");
+			SetManualInsn(ea, form("FOFSi    %s", Name(temp1)));
+			add_dref(ea, temp0A, dr_O|XREF_USER);
+			add_dref(ea, temp1, dr_O|XREF_USER);
+			Jump(ea + 2);
+//*/
+/*
+		if(Byte(ea + 1)!=0x80) {
+			auto temp0 = MK_FP(AskSelector(Byte(ea + 1) + 1), 0);
+			auto temp0A = temp0 + (Byte(ea + 0) + 0x8001);
+			auto temp1 = temp0 + Word(temp0A);
+			make_data_array(ea, 2, "");
+			SetManualInsn(ea, form("FOFS    %s", Name(temp1)));
+			add_dref(ea, temp0A, dr_O|XREF_USER);
+			add_dref(ea, temp1, dr_O|XREF_USER);
+//			make_data_array(ea + 2, 4, "");
+//			Jump(ea + 2 + 4);
+			Jump(ea + 2);
+		} else {
+			make_data_array(ea, 2, "");
+			Jump(ea + 2);
+		}
+//*/
 	} else if(mode==11) {
 		auto startea = ea, stop = 0;
 
@@ -273,7 +355,7 @@ static auto_far_ptr_ex(ea,mode,arg) {
 			auto cc;
 
 			while ((cc=Byte(ptr))!=0) {
-				auto tmp1 = Word(ptr+1);
+				tmp1 = Word(ptr+1);
 				MakeUnknown(ptr, 3, DOUNK_SIMPLE);
 				MakeByte(ptr);
 				MakeWord(ptr+1);
@@ -325,13 +407,18 @@ static auto_far_ptr_ex(ea,mode,arg) {
 ///* simple far link
 		bofs = 0;
 		wofs = 1;
-		size = 3;
+		size = 9;
 		MakeUnknown(ea, size, DOUNK_SIMPLE);
 		MakeByte(ea + bofs);
 		MakeWord(ea + wofs);
-//		MakeWord(ea + wofs + 2);
+		MakeWord(ea + wofs + 2);
+		MakeWord(ea + wofs + 4);
+		MakeWord(ea + wofs + 6);
 //		MakeWord(ea + wofs + 2);
 		far_ptr(ea, bofs, wofs, 0, 0);
+		far_ptr(ea, bofs, wofs + 2, 0, 0);
+		far_ptr(ea, bofs, wofs + 4, 0, 0);
+		far_ptr(ea, bofs, wofs + 6, 0, 0);
 //		far_ptr(ea, bofs, wofs + 2, 0, 0);
 //		make_data_array(ea + 3, 6, "");
 //		far_ptr(ea, bofs, wofs + 2, 0, 0);
@@ -671,12 +758,12 @@ static make_8bit_near_tbl(loaddr, hiaddr, ofs, code) {
 				if(refptr<0x4000) {
 					base = MK_FP(AskSelector(0), 0);
 				} else if(refptr<0x8000){
-//					if(extbank==-1) {
-//						extbank = AskLong(1, "Enter External Bank");
-//						extbase = MK_FP(AskSelector(extbank), 0);
-//					}
-//					base = extbase;
-					base = MK_FP(AskSelector(1), 0);
+					if(extbank == -1) {
+						extbank = AskLong(1, "Enter External Bank");
+						extbase = MK_FP(AskSelector(extbank), 0);
+					}
+					base = extbase;
+//					base = MK_FP(AskSelector(1), 0);
 				}
 			} else {
 				if(refptr<0x4000) {
@@ -1426,7 +1513,7 @@ static auto_rename_ptrs() {
 				}
 			}
 		} else {
-			auto rom_mode = 1;
+			auto rom_mode = 0;
 			if(rom_mode == 0) {				// NES mode (16x8k)
 				if(bank<16){
 					if(ofs<0xC000) {
@@ -1459,45 +1546,25 @@ static auto_rename_ptrs() {
 }
 
 // garbage labels collector
+static garbage_search(loc) {
+	auto ea = 0;
+	while ((ea = FindText(ea,SEARCH_DOWN|SEARCH_REGEX,1,0,loc)) != BADADDR) {
+		if((RfirstB0(ea)==-1)&&(DfirstB(ea)==-1)) {
+			Message(">no ref label '%s' at 0x%08x deleted\n", Name(ea), ea);
+			MakeName(ea, "");
+		}
+//		else
+//			Message(">ref label '%s' at 0x%08x\n", Name(ea), ea);
+		ea = NextHead(ea, -1);
+	}
+}
+
 static garbage_collector(void) {
 	Message("garbage collector start\n");
-	auto ea = 0, res;
-	while ((ea = FindText(ea,SEARCH_DOWN|SEARCH_REGEX,1,0,"loc_.*:")) != BADADDR) {
-		if((RfirstB0(ea)==-1)&&(DfirstB(ea)==-1)) {
-			MakeName(ea, "");
-			Message(">found code label at 0x%08x:", ea);
-			Message(" no crossrefs, delete\n");
-		}
-		ea = FindCode(ea,SEARCH_DOWN);
-	}
-	ea = 0;
-	while ((ea = FindText(ea,SEARCH_DOWN|SEARCH_REGEX,1,0,"unk_.*:")) != BADADDR) {
-		if((RfirstB0(ea)==-1)&&(DfirstB(ea)==-1)) {
-			MakeName(ea, "");
-			Message(">found unk label at 0x%08x:", ea);
-			Message(" no crossrefs, delete\n");
-		}
-		ea = FindCode(ea,SEARCH_DOWN);
-	}
-///*
-	ea = 0;
-	while ((ea = FindText(ea,SEARCH_DOWN|SEARCH_REGEX,1,0,"byte_.*:")) != BADADDR) {
-		if((RfirstB0(ea)==-1)&&(DfirstB(ea)==-1)) {
-			MakeName(ea, "");
-			Message(">found byte label at 0x%08x:", ea);
-			Message(" no crossrefs, delete\n");
-		}
-		ea = FindCode(ea,SEARCH_DOWN);
-	}
-	ea = 0;
-	while ((ea = FindText(ea,SEARCH_DOWN|SEARCH_REGEX,1,0,"word_.*:")) != BADADDR) {
-		if((RfirstB0(ea)==-1)&&(DfirstB(ea)==-1)) {
-			MakeName(ea, "");
-			Message(">found word label at 0x%08x:", ea);
-			Message(" no crossrefs, delete\n");
-		}
-		ea = FindCode(ea,SEARCH_DOWN);
-	}
-//*/
+	garbage_search("loc_.*:");
+	garbage_search("unk_.*:");
+	garbage_search("byte_.*:");
+	garbage_search("word_.*:");
+	garbage_search("off_.*:");
 	Message("garbage collector done\n");
 }

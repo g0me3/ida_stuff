@@ -129,7 +129,8 @@ static main(void)
 //	AddHotkey("Shift-F", "make_8bit_far_ofs_selection3_i");	//
 
 	AddHotkey("Shift-T", "make_8bit_ofs_selection4");		// --//-- 4 byte gap
-	AddHotkey("Shift-G", "make_8bit_ofs_selection4_i");		// --//-- hi/lo inverse order
+//	AddHotkey("Shift-G", "make_8bit_ofs_selection4_i");		// --//-- hi/lo inverse order
+	AddHotkey("Shift-G", "make_8bit_far_ofs_selection4_i"); // --//-- far manual bank request hi/lo inverse order
 	AddHotkey("Shift-B", "make_8bit_far_ofs_selection4");	// --//-- far manual bank request
 
 	AddHotkey("Shift-Y", "make_8bit_ofs_selection5");		// --//-- 5 bytes gap
