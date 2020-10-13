@@ -407,41 +407,56 @@ static auto_far_ptr_ex(ea,mode,arg) {
 ///* simple far link
 		bofs = 0;
 		wofs = 1;
-		size = 9;
+		size = 3;
 		MakeUnknown(ea, size, DOUNK_SIMPLE);
 		MakeByte(ea + bofs);
 		MakeWord(ea + wofs);
-		MakeWord(ea + wofs + 2);
-		MakeWord(ea + wofs + 4);
-		MakeWord(ea + wofs + 6);
+//		MakeWord(ea + wofs + 2);
+//		MakeWord(ea + wofs + 4);
+//		MakeWord(ea + wofs + 6);
 //		MakeWord(ea + wofs + 2);
 		far_ptr(ea, bofs, wofs, 0, 0);
-		far_ptr(ea, bofs, wofs + 2, 0, 0);
-		far_ptr(ea, bofs, wofs + 4, 0, 0);
-		far_ptr(ea, bofs, wofs + 6, 0, 0);
 //		far_ptr(ea, bofs, wofs + 2, 0, 0);
-//		make_data_array(ea + 3, 6, "");
+//		far_ptr(ea, bofs, wofs + 4, 0, 0);
+//		far_ptr(ea, bofs, wofs + 6, 0, 0);
 //		far_ptr(ea, bofs, wofs + 2, 0, 0);
+//		make_data_array(ea + bofs, 2, "");
+//		auto v0 = Byte(ea + bofs) & 0x3F;
+//		if((v0 & 0x3F) == 0)
+//			base = MK_FP(AskSelector(0x3D + 1), 0);
+//		else
+//			base = MK_FP(AskSelector(v0 + 1), 0);
+//		if(Word(ea + wofs) >=0xE000)
+//			base = MK_FP(AskSelector(0x3F + 1), 0);
+//		OpOffEx(ea + wofs, 0, REF_OFF16, -1, base, 0);
 		Jump(ea + size);
 //*/
 /*
-		auto cmd;
-		size = 0;
-		while((cmd = Byte(ea)) != 0x00) {
+		bofs = 0;
+		wofs = 1;
+		size = 3;
+		MakeUnknown(ea, size, DOUNK_SIMPLE);
+		MakeByte(ea + bofs);
+		MakeWord(ea + wofs);
+		auto v0 = Byte(ea + bofs) + 0x13;
+		base = MK_FP(AskSelector(v0), 0);
+		OpOffEx(ea + wofs, 0, REF_OFF32, -1, base, -0x4000);
+		Jump(ea + size);
+//*/
+/*
+		auto cmd1;
+		while((cmd1 = Byte(ea)) != 0xFF) {
 				MakeUnknown(ea, 7, DOUNK_SIMPLE);
 				MakeByte(ea + 0);
 				MakeWord(ea + 1);
-				far_ptr(ea, 3, 1, 0, 0);
-				MakeByte(ea + 3);
-				MakeWord(ea + 4);
-				far_ptr(ea, 6, 4, 0, 0);
-				MakeByte(ea + 6);
+				far_ptr(ea, 0, 1, 0, 0);
+				MakeWord(ea + 3);
+				MakeWord(ea + 5);
 				ea = ea + 7;
-				size = size + 7;
 		}
 		MakeUnknown(ea, 1, DOUNK_SIMPLE);
 		MakeByte(ea);
-//		Jump(ea);
+		Jump(ea + 1);
 //*/
 /*
 		MakeUnknown(ea, 3, DOUNK_SIMPLE);
@@ -1287,69 +1302,24 @@ static auto_array() {
 		Message("can't make data!\n");
 }
 
-
 static ptr_table(ea, docode) {
 	auto i = 0, w0, stop = 0;
 	auto base = MK_FP(AskSelector(GetSegmentAttr(ea, SEGATTR_SEL)), 0);
 	do {
-		if((i&1)==0){
+		if(((i&1)==0)&&(!stop)){
 			MakeUnknown(ea+i, 2, DOUNK_SIMPLE);
 			MakeWord(ea+i);
 			w0=Word(ea+i);
 			OpOffEx(ea+i, 0, REF_OFF16, -1, base, 0);
 			if(docode) {
-//				Message("try to do code at 0x%08x\n",base+w0);
-//				MakeUnknown(base+w0, 3, DOUNK_SIMPLE);
 				make_code(base+w0);
-//				MakeCode(base+w0);
-//				AutoMark(base+w0, AU_CODE);
-				Wait();
-			}
-			Wait();
-		}
-		i++;
-		if((i&1)==0) {
-			auto tmpp=GetFlags(ea + i);
-			stop=(isRef(tmpp));//||isCode(tmpp));
-		}
-//		Message("stop = %d\n",stop);
-	} while (!stop && (i < 0x10000));
-}
-
-static ptr_table_far(ea, farbank, docode) {
-	auto i = 0, w0, stop = 0;
-	auto base, eabank = GetSegmentAttr(ea, SEGATTR_SEL);
-	do {
-		if((i&1)==0){
-			MakeUnknown(ea+i, 2, DOUNK_SIMPLE);
-			MakeWord(ea+i);
-			w0=Word(ea+i);
-			if(w0<0x4000) {
-				base = MK_FP(AskSelector(0), 0);
-			} else if(w0<0x8000) {
-				if((eabank>0)||(farbank==-1))
-					base = MK_FP(AskSelector(eabank), 0);
-				else
-					base = MK_FP(AskSelector(farbank), 0);
-			}
-			OpOffEx(ea+i, 0, REF_OFF16, -1, base, 0);
-			if(docode) {
-//				Message("try to do code at 0x%08x\n",base+w0);
-//				MakeUnknown(base+w0, 3, DOUNK_SIMPLE);
-
-//				make_code(base+w0);	// too many broken code if table detect failed
-				MakeCode(base+w0);
 				AutoMark(base+w0, AU_CODE);
 				Wait();
 			}
 			Wait();
 		}
-		i++;
-		if((i&1)==0) {
-			auto tmpp=GetFlags(ea + i);
-			stop=(isRef(tmpp));//||isCode(tmpp));
-		}
-//		Message("stop = %d\n",stop);
+		i = i + 2;
+		stop = isRef(GetFlags(ea + i)) | isRef(GetFlags(ea + i + 1));	// assume the first offset always present, no need to stop here
 	} while (!stop && (i < 0x10000));
 }
 
@@ -1566,5 +1536,11 @@ static garbage_collector(void) {
 	garbage_search("byte_.*:");
 	garbage_search("word_.*:");
 	garbage_search("off_.*:");
+
+	garbage_search("_jloc.*:");
+	garbage_search("_j_prg.*:");
+	garbage_search("_j_j_.*:");
+	garbage_search("_jsub.*:");
+
 	Message("garbage collector done\n");
 }

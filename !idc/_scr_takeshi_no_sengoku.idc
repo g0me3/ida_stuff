@@ -184,10 +184,10 @@ static take_snd_lib_parse(void) {
 	auto seg = GetReg(ea,"ds") - 1;
 	auto base = MK_FP(AskSelector(seg + 1), 0);
 	if(ea != BADADDR) {
-		ptr_ea = Word(ea) + base;	// for ptr table
-		auto tmpname = get_offset_name(ea, seg);
-//		ptr_ea = ea;				// for RAW
-//		auto tmpname = get_address_name(ea, seg);
+//		ptr_ea = Word(ea) + base;	// for ptr table
+//		auto tmpname = get_offset_name(ea, seg);
+		ptr_ea = ea;				// for RAW
+		auto tmpname = get_address_name(ea, seg);
 		auto cnt = Byte(ptr_ea);
 		ptr_ea = make_data_array(ptr_ea,1,"");
 		auto chnl = 0;

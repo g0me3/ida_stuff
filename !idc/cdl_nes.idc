@@ -8,9 +8,6 @@
 #define DO_CODE
 #define DO_ALT_MESSAGES
 #define DO_CMT_CLEAR
-//#define DO_CUSTOM_DISABLE
-
-//#define MMC_PRG_SET0	0xC5B8
 
 static main(void) {
 	auto cdlFileName, cdlFile, cdlOpen;
@@ -24,25 +21,39 @@ static main(void) {
 		cdlFile = fopen(cdlFileName, "rb");
 	}
 	if( cdlFile != 0 ) {
-		Message("CDL file \"%s\" opened succesfull!\n", cdlFileName, segsize);
+		Message("CDL file \"%s\" opened succesfull!\n", cdlFileName);
+/*
+		auto cdlSignature = "", cdlType = "";
+		fgetc(cdlFile);														// skip 0D
+		for(i=0; i<13; i++) cdlSignature = cdlSignature + fgetc(cdlFile);	// read signature
+		fgetc(cdlFile);														// skip 0F
+		for(i=0; i<15; i++) cdlType = cdlType + fgetc(cdlFile);				// read type
+		if ((cdlSignature == "BIZHAWK-CDL-2")&&((cdlType == "NES            ")) {
+			auto cdlFiles=0;
+			for(i=0; i<4; i++) cdlFiles = cdlFiles | (fgetc(cdlFile)<<(i*8));	// read files count
+			Message("CDL file opened succesfully.\n\tName:    \"%s\"\n\tVersion: \"%s\"\n\tType:    \"%s\"\n\tChunks:  %d\n", cdlFileName,cdlSignature,cdlType,cdlFiles);
+			result=cdl_chunk_search(cdlFile, "???", cdlFiles);
+			if(result == -1) {
+				Message("Can't find proper Data chunk\nStartig disassembly without CDL.\n", cdlFileName);
+				cdlFileOpened = 0;
+			} else
+				cdlFileOpened = 1;
+		} else {
+			Message("CDL file not in GB format (%s, %s)!\nStartig disassembly without CDL.\n", cdlSignature, cdlType);
+			cdlFileOpened = 0;
+		}
+*/
 		cdlOpen = 1;
 	} else {
 		cdlOpen = 0;
 	}
 
-
-//	if (cdlFile != 0)
+	if (1)
 	{
 		auto cd, ncd, secondpass = 0;
-		auto seg = 1, segea, segea_orig, segsize, segorg, segorgmask;
-		auto codelog = 0, datalog = 0, pcmlog = 0, unusedlog = 0;
-//		auto lastseg, lastsegorg, plastsegorg;
-//		auto singleseg, singlesegorg;
-//		auto s8, sA, sC, sE;
+		auto seg = 1;
 
-		segsize = getSegSize(seg);
-		segorgmask = ~(segsize - 1);
-		Message("SEG analyze start (seg size = 0x%x)\n", segsize);
+		Message("SEG analyze start\n");
 
 		auto segcount = 1, onesingleseg = 0, onesingleorg = 0, miltisingleorg = 0;
 		auto segs6 = 0, seg6 = 0;
@@ -121,37 +132,30 @@ static main(void) {
 		Message("SEG analyze is over\n");
 
 		do {
-			auto i, segeai, optype, opvalue, opsize = 0, lastop = 0, lastopaddr = 0, lastopaddrbit = 0, ofst, byteread = 0, firstoffset = 0xffff;
-			segea_orig = SegByBase(seg);
-			segorg = getSegOrg(seg);
-			i = 0;
-			Message("Seg %08x %08x start pass %d\n", segea_orig, segorg, secondpass);
+			auto segea, segea_orig, segsize, segorg, segorgmask;
+			auto codelog = 0, datalog = 0, pcmlog = 0, unusedlog = 0;
+			auto i = 0, segeai, optype, opvalue, opsize = 0, lastop = 0, lastopaddr = 0, lastopaddrbit = 0, ofst, byteread = 0, firstoffset = 0xffff;
+
+			if(secondpass == 0) {
+				segea_orig = SegByBase(seg);
+				segorg = getSegOrg(seg);
+				segsize = getSegSize(seg);
+				segorgmask = ~(segsize - 1);
+				Message("Seg EA=%08x, ORG=%04x SIZE=%04x MASK=%04x\n>first pass\n", segea_orig, segorg, segsize, segorgmask);
+			} else {
+				Message(">second pass\n");
+			}
 
 			do {
 				segea = segea_orig;
 				segeai = segea + i;
 
-//#ifdef DO_CUSTOM_DISABLE
-//				if((segeai>=0x105800)&&(segeai<(0x105800+2048))) {
-//					segeai = 0x195800 + i;
-//					segea = 0x8000;
-//					MakeComm(segeai, "");
-//					MakeComm(segeai, "!TEST!");
-//				}
-//#endif
 				if(secondpass == 0) {
 					if(!ncd) {
 						if(cdlOpen == 1)
 							cd = fgetc(cdlFile);
 						else
 							cd = 0;
-//						Message("adr=%04x byte=%02x\n",segea+i,cd);
-//#ifdef DO_CUSTOM_DISABLE
-//						if((segeai>=0xA074C)&&(segeai<=0xA0A67))
-//							cd = 0;
-//						if((segeai>=0x194000)&&(segeai<0x195800))
-//							cd = 0;
-//#endif
 					} else
 						ncd = 0;
 
@@ -164,7 +168,7 @@ static main(void) {
 #ifdef DO_ALT_MESSAGES
 							MakeComm(segeai, form("*%1xp ",((cd&0xc)>>1)+8));
 #else
-							MakeComm(segeai, "pcm data");
+							MakeComm(segeai, "pcm");
 #endif
 
 #ifdef DO_DATA
@@ -209,13 +213,6 @@ static main(void) {
 								cd = fgetc(cdlFile);
 							else
 								cd = 0;
-//							Message("adr=%04x byte=%02x\n",segea+i,cd);
-//#ifdef DO_CUSTOM_DISABLE
-//							if((segeai>=0xA074C)&&(segeai<=0xA0A67))
-//								cd = 0;
-//							if((segeai>=0x194000)&&(segeai<0x195800))
-//								cd = 0;
-//#endif
 							ncd = 1;
 							ofst = ofst | (Byte(segeai + 1) << 8);
 							byteread++;
@@ -282,7 +279,6 @@ static main(void) {
 					} else if((cd & 3) == 0) {
 #ifdef DO_ALT_MESSAGES
 						MakeComm(segeai, "*-- ");
-//						MakeComm(segeai, "-unused-");
 #else
 						MakeComm(segeai, "");
 #endif
@@ -295,13 +291,6 @@ static main(void) {
 								cd = fgetc(cdlFile);
 							else
 								cd = 0;
-//							Message("adr=%04x byte=%02x\n",segea+i,cd);
-//#ifdef DO_CUSTOM_DISABLE
-//							if((segeai>=0xA074C)&&(segeai<=0xA0A67))
-//								cd = 0;
-//							if((segeai>=0x194000)&&(segeai<0x195800))
-//								cd = 0;
-//#endif
 							ncd = 1;
 #ifdef DO_ALT_MESSAGES
 							MakeComm(segeai+1, "*-- ");
@@ -432,8 +421,8 @@ static main(void) {
 #ifdef DO_CODE_OFFSETS
 							if(opmasked < 0x6000)
 								OpOff(segeai,0,0);
-//							else if(opmasked == segorg)
-//								OpOff(segeai,0,MK_FP(AskSelector(seg),0));
+							else if(opmasked == segorg)
+								OpOff(segeai,0,MK_FP(AskSelector(seg),0));
 							else if(miltisingleorg > 1)
 								makeOffsetMulti(opmasked, segeai, seg6, seg8, segA, segC, segE, segsmask);
 							else if((miltisingleorg == 1)&&(opmasked == onesingleorg))
@@ -458,7 +447,6 @@ static main(void) {
 //		garbage_collector();
 
 		segea = SegByBase(seg - 1) + segsize;
-#ifdef DO_DATA
 		MakeUnknown(segea - 6, 6, DOUNK_SIMPLE);
 		MakeWord(segea - 6);
 		if(!OpOff(segea - 6,0,MK_FP(AskSelector(seg - 1),0)))
@@ -469,7 +457,6 @@ static main(void) {
 		MakeWord(segea - 2);
 		if(!OpOff(segea - 2,0,MK_FP(AskSelector(seg - 1),0)))
 			OpOff(segea - 2,0,MK_FP(AskSelector(seg - 2),0));
-#endif
 
 		Message("CDL file has been processed successfully.\n");
 		Message("	CODE bytes:   0x%x\n",codelog);
@@ -539,3 +526,30 @@ static makeOffsetMulti(opmasked, segeai, seg6, seg8, segA, segC, segE, segsmask)
 	else if((opmasked < 0x8000) && (seg6 == 0))
 		OpOff(segeai,0,0);
 }
+
+/*
+static cdl_chunk_search(cdl, chunk, max) {
+	auto name, size, len, i, ret = 0;
+
+	while(ret==0) {
+		name="";
+		size=0;
+		len=fgetc(cdl);									// get chunk name len
+		for(i=0; i<len; i++) name = name + fgetc(cdl);	// read chunk name
+		if(name!=chunk) {
+			for(i=0; i<4; i++) size = size | (fgetc(cdl)<<(i*8));
+														// read file size
+			for(i=0; i<size; i++) fgetc(cdl);			// read skip file
+			max--;
+			if(max==0)
+				ret = -1;
+//			Message("\tSkip:   \"%s\" (size %08x)\n\n",name, size);
+		} else {
+			for(i=0; i<4; i++) size = size | (fgetc(cdl)<<(i*8));
+			Message("\tFound:   \"%s\" (size %08x)\n\n",name, size);
+			ret = size;
+		}
+	}
+	return ret;
+}
+*/

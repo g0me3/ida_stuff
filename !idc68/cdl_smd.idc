@@ -10,7 +10,7 @@ static code_patterns(void) {
 
 static main(void) {
 	auto cdlFileName, cdlFile, cdlFileOpened, extPos, idbFileName = GetIdbPath();
-	auto i, j, cd, seg, segcounter = 0;
+	auto i, j, cd, seg, segcounter = 0, segsize;
 	auto segea, segeai, segorg, secondpass = 0;
 	auto codelog = 0, datalog = 0, unusedlog = 0;
 	auto opcode, optype, opvalue;
@@ -35,16 +35,16 @@ static main(void) {
 		fgetc(cdlFile);														// skip 0F
 		for(i=0; i<15; i++) cdlType = cdlType + fgetc(cdlFile);				// read type
 		for(i=0; i<4; i++) cdlFiles = cdlFiles | (fgetc(cdlFile)<<(i*8));	// read files count
-		if ((cdlSignature == "BIZHAWK-CDL-2")&&(cdlType == "SNES           ")) {
+		if ((cdlSignature == "BIZHAWK-CDL-2")&&(cdlType == "GEN            ")) {
 			Message("CDL file opened succesfully.\n\tName:    \"%s\"\n\tVersion: \"%s\"\n\tType:    \"%s\"\n\tChunks:  %d\n", cdlFileName,cdlSignature,cdlType,cdlFiles);
-			result=cdl_chunk_search(cdlFile, "CARTROM", cdlFiles);
+			result=cdl_chunk_search(cdlFile, "MD CART", cdlFiles);
 			if(result == -1) {
 				Message("Can't find proper Data chunk\nStartig disassembly without CDL.\n", cdlFileName);
 				cdlFileOpened = 0;
 			} else
 				cdlFileOpened = 1;
 		} else {
-			Message("CDL file not in SNES format (%s, %s)!\nStartig disassembly without CDL.\n", cdlSignature, cdlType);
+			Message("CDL file not in GEN format (%s, %s)!\nStartig disassembly without CDL.\n", cdlSignature, cdlType);
 			cdlFileOpened = 0;
 		}
 	} else {
@@ -52,128 +52,65 @@ static main(void) {
 		cdlFileOpened = 0;
 	}
 
-		while (SegByName(form(".%02X",0x80|banksnum)) != -1) {banksnum++;}
+	{
+		seg = 0 ; //SegByName("ROM");
+		segea = 0 ; //SegByBase(seg);
+		segsize = SegEnd(segea);
 
-		Message("Total Banks: %d\n", banksnum);
+		Message("Seg ROM SIZE=%08x start\n", segsize);
 
-//		while ((seg = SegByName(form(".%02X",0x80|segcounter))) != -1) {
-		while (segcounter < banksnum) {
+		auto bar = "";
+		for(i=0; i<(segsize>>16); i++)
+			bar = bar + "_";
+		Message("%s\n", bar);
 
-			seg = SegByName(form(".%02X",0x80|segcounter));
-			segea = SegByBase(seg);
+		i = 0;
+		do {
+			segeai = segea + i;
+			if((segeai & 0xFFFF) == 0)Message(".", segeai);
 
-			segorg = 0x8000;	// default LoROM
-			// TODO: HiRom support also
+//  Exec68k = 0x01
+//  Data68k = 0x04
+//  ExecZ80First = 0x08
+//  ExecZ80Operand = 0x10
+//  DataZ80 = 0x20
+//  DMASource = 0x40 --
 
-			if(secondpass==0) {
-#ifdef DEBUG
-				Message("DEBUG: name='.%02X', SegByName=%02X, SegByBase=0x%08X cdlpos=%08X\n",0x80|segcounter, seg, segea, ftell(cdlFile));
-#endif
-				Message("Seg %02x start pass %d", seg, secondpass);
-			}
-			else
-				Message(" %d", secondpass);
+				if(cdlFileOpened == 1)
+					cd = fgetc(cdlFile);
+				else
+					cd = 0;
+//				MakeComm(segeai, "");
+				auto cmt = "";
 
-			i = 0;
-//	work here
-			do {
-				segeai = segea + i;
-				if(secondpass == 0) {
-					// FIRST PASS START
-					if(cdlFileOpened == 1)
-						cd = fgetc(cdlFile);
-					else
-						cd = 0;
-
-					MakeComm(segeai, "");
-					auto cmt = "";
-
-					if(cd & 1) {
-						cmt = cmt + "opcode ";
-						MakeCode(segeai);
-						codelog++;
-					}
-					if(cd & 2) {
-						cmt = cmt + "operand ";
-						codelog++;
-					}
-					if(cd & 4) {
-						cmt = cmt + "data ";
-						datalog++;
-					}
-					if(cd & 8) {
-						cmt = cmt + "dma ";
-						datalog++;
-					}
-					if(cd & 0x80) {
-						cmt = cmt + "dsp ";
-						datalog++;
-					} else {
-						unusedlog++;
-					}
-
-					MakeComm(segeai, cmt);
-
-					// FIRST PASS END
-				} else {
-					// SECOND PASS START
-					// SECOND PASS END
+				if(cd & 1) {
+					cmt = cmt + "*c";
+					MakeCode(segeai);
+					codelog++;
+//					i = i + ItemSize(segeai) - 1;
 				}
-				i++;
-			} while (i < 0x8000);
+				if(cd & 4) {
+					cmt = cmt + "*d";
+					datalog++;
+				}
+				if(cd & 0x40) {
+					cmt = cmt + "*dma";
+					datalog++;
+				} else {
+					unusedlog++;
+				}
+				MakeComm(segeai, cmt);
+			i++;
+		} while (i < segsize);
+	}
 
-//	end work here
+	Message("\nScript completed, summary:\n");
+	Message("\tCODE bytes:\t0x%x\n",codelog);
+	Message("\tDATA bytes:\t0x%x\n",datalog);
+	Message("\tUNUSED bytes:\t0x%x\n",unusedlog);
 
-//		if(secondpass == 0) {
-//			secondpass++;
-//		} else {
-//			secondpass = 0;
-			segcounter++;
-			Message("\n");
-//		}
-
-		}	// while (SegByName(form(".%02X",0x80|seg) != -1)
-
-		Message("\nScript completed, summary:\n");
-		Message("\tCODE bytes:\t0x%x\n",codelog);
-		Message("\tDATA bytes:\t0x%x\n",datalog);
-		Message("\tUNUSED bytes:\t0x%x\n",unusedlog);
-
-		if(cdlFileOpened == 1)
-			fclose(cdlFile);
-}
-
-static makeOffset(ea,val,s,opnum,bnum,cbank) {
-//	if((val >= 0x0) && (val < 0x4000))
-//		OpOff(ea,opnum,0);
-//	else if((val >=0x4000) && (val < 0x8000)) {
-//		if(s == 0) {
-//			if(bnum == 2)
-//				OpOff(ea,opnum,MK_FP(AskSelector(1),0));
-//			else if(cbank!=-1)
-//				OpOff(ea,opnum,MK_FP(AskSelector(cbank),0));
-//		} else
-//			OpOff(ea,opnum,MK_FP(AskSelector(s),0));
-//	} else if((val >=0x8000) && (val < 0x9800))
-//		OpOff(ea,opnum,MK_FP(AskSelector(SegByName("CHRRAM")),0));
-//	else if((val >=0x9800) && (val < 0x9C00))
-//		OpOff(ea,opnum,MK_FP(AskSelector(SegByName("BGMAP1")),0));
-//	else if((val >=0x9C00) && (val < 0xA000))
-//		OpOff(ea,opnum,MK_FP(AskSelector(SegByName("BGMAP2")),0));
-//	else if((val >=0xA000) && (val < 0xC000))
-//		OpOff(ea,opnum,MK_FP(AskSelector(SegByName("CRAM")),0));
-//	else if((val >=0xC000) && (val < 0xD000))
-//		OpOff(ea,opnum,MK_FP(AskSelector(SegByName("RAM0")),0));
-//	else if((val >=0xD000) && (val < 0xE000))
-//		OpOff(ea,opnum,MK_FP(AskSelector(SegByName("RAMB")),0));
-//	else if((val >=0xFE00) && (val < 0xFEA0))
-//		OpOff(ea,opnum,MK_FP(AskSelector(SegByName("OAM")),0));
-//	else if((val >=0xFF00) && (val < 0xFF80))
-//		OpOff(ea,opnum,MK_FP(AskSelector(SegByName("HWREGS")),0));
-//	else if((val >=0xFF80) && (val < 0xFFFF))
-//		OpOff(ea,opnum,MK_FP(AskSelector(SegByName("ZRAM")),0));
-//	else if(val ==0xFFFF)
-//		OpOff(ea,opnum,MK_FP(AskSelector(SegByName("IENABLE")),0));
+	if(cdlFileOpened == 1)
+		fclose(cdlFile);
 }
 
 static cdl_chunk_search(cdl, chunk, max) {

@@ -47,6 +47,21 @@ static far_sys_call_search(pat, b0, b1, instr) {
 	}
 }
 
+static far_sys_call_search_b(pat, b_lo, b_hi, bank, instr) {
+	auto ea = -1, temp0, temp1;
+	while((ea=FindBinary(ea + 1, SEARCH_DOWN, pat))!=BADADDR) {
+		Message("found pattern at 0x%08x\n", ea);
+		temp0 = MK_FP(AskSelector((Byte(ea + bank) & 0x3F) + 1), 0);
+		temp1 = temp0 + (Byte(ea + b_lo) | (Byte(ea + b_hi) << 8));
+//		MakeUnknown(ea, 2, DOUNK_SIMPLE);
+//		MakeCode(ea);
+		SetManualInsn(ea, form(instr, Name(temp1)));
+		make_data_array(ea + 2, ((strlen(pat) + 1) / 3) - 2, "");
+		SetManualInsn(ea + 2, "ENDM");
+		AddCodeXref(ea, temp1, fl_CF|XREF_USER);
+	}
+}
+
 static custom_call_search(pat, b_lo, b_hi, c, d, instr) {
 	auto ea = -1, temp0, temp1;
 	while((ea=FindBinary(ea+1, SEARCH_DOWN, pat))!=BADADDR) {
@@ -68,24 +83,65 @@ static custom_call_search(pat, b_lo, b_hi, c, d, instr) {
 	}
 }
 
-static custom_call_search_ex(pat, b_lo, b_hi, c, d, e, f, instr) {
-	auto ea = -1, temp0, temp1;
+static getbase(ea, val) {
+	auto base = 0;
+	if((val >= 0x0000) && (val < 0x4000))
+		base = 0;
+	else if((val >=0x4000) && (val < 0x8000))
+		base = MK_FP(AskSelector(GetReg(ea, "ds")),0);
+	else if((val >=0x8000) && (val < 0x9800))
+		base = MK_FP(AskSelector(SegByName("CHRRAM")),0);
+	else if((val >=0x9800) && (val < 0x9C00))
+		base = MK_FP(AskSelector(SegByName("BGMAP1")),0);
+	else if((val >=0x9C00) && (val < 0xA000))
+		base = MK_FP(AskSelector(SegByName("BGMAP2")),0);
+	else if((val >=0xA000) && (val < 0xC000))
+		base = MK_FP(AskSelector(SegByName("CRAM")),0);
+	else if((val >=0xC000) && (val < 0xD000))
+		base = MK_FP(AskSelector(SegByName("RAM0")),0);
+	else if((val >=0xD000) && (val < 0xE000))
+		base = MK_FP(AskSelector(SegByName("RAMB")),0);
+	else if((val >=0xFE00) && (val < 0xFEA0))
+		base = MK_FP(AskSelector(SegByName("OAM")),0);
+	else if((val >=0xFF00) && (val < 0xFF80))
+		base = MK_FP(AskSelector(SegByName("HWREGS")),0);
+	else if((val >=0xFF80) && (val < 0xFFFF))
+		base = MK_FP(AskSelector(SegByName("ZRAM")),0);
+	else if(val ==0xFFFF)
+		base = MK_FP(AskSelector(SegByName("IENABLE")),0);
+	return base;
+}
+
+static arg(ea, a) {
+	if(a & 0x100) {
+		if(a & 0x200)
+			return Word(ea + (a & 0xFF));
+		else {
+			auto temp0 = Word(ea + (a & 0xFF));
+			auto temp1 = temp0 + getbase(ea, temp0);
+			add_dref(ea, temp1, dr_O|XREF_USER);
+			return Name(temp1);
+		}
+	} else {
+		return Byte(ea + (a & 0xFF));
+	}
+}
+
+static custom_call_search_ex(pat, a, c, d, e, f, instr) {
+	auto ea = -1, size = ((strlen(pat) + 1) / 3);
 	while((ea=FindBinary(ea+1, SEARCH_DOWN, pat))!=BADADDR) {
-		auto bank = GetReg(ea, "ds");
 		Message("found pattern at 0x%08x\n", ea);
-		temp0 = Byte(ea + b_lo) | (Byte(ea + b_hi) << 8);
-		if(temp0 >=0xC000)
-			bank = 15 + 1;
-		temp1 = MK_FP(AskSelector(bank), 0) + temp0;
-//		MakeUnknown(ea, 2, DOUNK_SIMPLE);
-//		MakeCode(ea);
-		if((c == -1) && (d == -1))
-			SetManualInsn(ea, form(instr, Name(temp1)));
+		make_data_array(ea, size, "");
+		if(c == -1)
+			SetManualInsn(ea, form(instr, arg(ea, a)));
+		else if(d == -1)
+			SetManualInsn(ea, form(instr, arg(ea, a), arg(ea, c)));
+		else if(e == -1)
+			SetManualInsn(ea, form(instr, arg(ea, a), arg(ea, c), arg(ea, d)));
+		else if(f == -1)
+			SetManualInsn(ea, form(instr, arg(ea, a), arg(ea, c), arg(ea, d), arg(ea, e)));
 		else
-			SetManualInsn(ea, form(instr, Name(temp1), Byte(ea + c), Byte(ea + d), Byte(ea + e), Byte(ea + f)));
-		make_data_array(ea + 2, ((strlen(pat) + 1) / 3) - 2, "");
-		SetManualInsn(ea + 2, "ENDM");
-		add_dref(ea, temp1, dr_O|XREF_USER);
+			SetManualInsn(ea, form(instr, arg(ea, a), arg(ea, c), arg(ea, d), arg(ea, e), arg(ea, f)));
 	}
 }
 
@@ -117,8 +173,22 @@ static far_ptr_search() {
 //	custom_call_search("A9 ?? 85 10 A9 ?? 85 11 A9 ?? 85 00 A9 ?? 85 01 A9 FF 85 05 85 06 20 F5 D2", 1, 5, 9, 13,  "PPUQ    %s,%02x,%02x,FF,FF");
 //	custom_call_search_ex("A9 ?? 85 10 A9 ?? 85 11 A9 ?? 85 00 A9 ?? 85 01 A9 ?? 85 05 A9 ?? 85 06 20 84 D2", 1, 5, 9, 13, 17, 21, "PPUQ    %s,%02x,%02x,FF,FF");
 
-	far_sys_call_search("A9 ?? 85 56 A9 ?? 85 57 20 BA CC", 1, 5, "FJSR");	// ultraman
-	far_sys_call_search("A9 ?? 85 56 A9 ?? 85 57 4C BA CC", 1, 5, "FJMP");
+//	far_sys_call_search("A9 ?? 85 56 A9 ?? 85 57 20 BA CC", 1, 5, "FJSR");	// ultraman
+//	far_sys_call_search("A9 ?? 85 56 A9 ?? 85 57 4C BA CC", 1, 5, "FJMP");
+//	far_sys_call_search_b("A9 ?? 85 87 A9 ?? 85 88 A9 ?? 20 43 E2", 1, 5, 9, "FJSR    %s");
+//	far_sys_call_search_b("A9 ?? 85 87 A9 ?? 85 88 A9 ?? 4C 64 E2", 1, 5, 9, "FJMP    %s");
+
+// gbc absolute x
+//                          0  1  2  3  4  5  6  7  8  9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24
+//	custom_call_search_ex("11 ?? ?? D5 3E ?? F5 33 3E ?? F5 33 3E ?? F5 33 3E ?? F5 33 CD 35 26 E8 06", 1|256, 5, 9, 13, 17, "_rect_draw(%s,%02x,%02x,%02x,%02x);");
+//	custom_call_search_ex("11 ?? ?? D5 3E ?? F5 33 3E ?? F5 33 CD B9 25 E8 04", 1|256, 5, 9, -1, -1, "_tiles_load(%s,%02x,%02x);");
+//	custom_call_search_ex("11 ?? ?? D5 3E ?? F5 33 3E ?? F5 33 CD 8C 24 E8 04", 1|256, 5, 9, -1, -1, "_effect_load(%s,%02x,%02x);");
+//	custom_call_search_ex("11 ?? ?? D5 3E ?? F5 33 3E ?? F5 33 3E ?? F5 33 3E ?? F5 33 CD 96 27 E8 06", 1|256, 5, 9, 13, 17, "_printf(%s,%02x,%02x,%02x,%02x);");
+//	custom_call_search_ex("11 ?? ?? D5 3E ?? F5 33 3E ?? F5 33 FA ?? ?? F5 33 3E ?? F5 33 CD 96 27 E8 06", 1|256, 5, 9, 13|256, 18, "_printf(%s,%02x,%02x,[%s],%02x);");
+
+// gb death track
+
+// Nintama eawase
 
 	Message("search is over\n");
 }
@@ -146,7 +216,7 @@ static main(void) {
 //	parametric_fixsize("20 FD DD", 2);
 
 
-//	parametric_fixsize("20 00 8E", 5);
+//	parametric_fixsize("20 70 E2", 2);
 //	parametric_fixsize("20 08 8E", 5);
 //	parametric_fixsize("20 10 8E", 5);
 //	parametric_fixsize("20 1D A4", 10);
@@ -193,7 +263,7 @@ static main(void) {
 //	parametric_fixsize("20 AD F7", 2);
 //	parametric_fixsize("20 80 F7", 2);
 
-//	parametric_stopbytes("CD 0A 78", "00");
+//	parametric_stopbytes("CD A5 2D", "00");
 //	parametric_stopbytes("CD 2E 78", "00");
 //	parametric_stopbytes("CD B8 77", "00 00");
 //	parametric_stopbytes("20 DE E9", "FF FF 00");
@@ -215,27 +285,30 @@ static main(void) {
 
 	garbage_collector();
 
-	far_ptr_search();
+//	far_ptr_search();
 
 //	SetCharPrm(INF_GENFLAGS,INFFL_LZERO|INFFL_ALLASM);	// generate leading zeroes in numbers
-//		makevarnotlove(0x5100,"_MMC5_PRG_SIZE",1);
-//		makevarnotlove(0x5101,"_MMC5_CHR_SIZE",1);
-//		makevarnotlove(0x5102,"_MMC5_WRAM0_ENABLE",1);
-//		makevarnotlove(0x5103,"_MMC5_WRAM1_ENABLE",1);
-//		makevarnotlove(0x5104,"_MMC5_CHR_MODE",1);
-//		makevarnotlove(0x5105,"_MMC5_NT_MODE",1);
-//		makevarnotlove(0x5106,"_MMC5_NT_FILL",1);
-//		makevarnotlove(0x5107,"_MMC5_AT_FILL",12);
-//		makevarnotlove(0x5113,"_MMC5_PRG_PAGES",5);
-//		makevarnotlove(0x5120,"_MMC5_CHR_BANKSA",8);
-//		makevarnotlove(0x5128,"_MMC5_CHR_BANKSB",8);
-//		makevarnotlove(0x5200,"_MMC5_SP_MODE",1);
-//		makevarnotlove(0x5201,"_MMC5_SP_SCROLL",1);
-//		makevarnotlove(0x5202,"_MMC5_SP_PAGE",2);
-//		makevarnotlove(0x5204,"_MMC5_IRQ_ENABLE",1);
-//		makevarnotlove(0x5205,"_MMC5_MUL0",1);
-//		makevarnotlove(0x5206,"_MMC5_MUL1",1);
-//		makevarnotlove(0x5C00,"_MMC5_EXRAM",1024);
+
+/*
+		makevarnotlove(0x5100,"_MMC5_PRG_SIZE",1);
+		makevarnotlove(0x5101,"_MMC5_CHR_SIZE",1);
+		makevarnotlove(0x5102,"_MMC5_WRAM0_ENABLE",1);
+		makevarnotlove(0x5103,"_MMC5_WRAM1_ENABLE",1);
+		makevarnotlove(0x5104,"_MMC5_CHR_MODE",1);
+		makevarnotlove(0x5105,"_MMC5_NT_MODE",1);
+		makevarnotlove(0x5106,"_MMC5_NT_FILL",1);
+		makevarnotlove(0x5107,"_MMC5_AT_FILL",12);
+		makevarnotlove(0x5113,"_MMC5_PRG_PAGES",5);
+		makevarnotlove(0x5120,"_MMC5_CHR_BANKSA",8);
+		makevarnotlove(0x5128,"_MMC5_CHR_BANKSB",8);
+		makevarnotlove(0x5200,"_MMC5_SP_MODE",1);
+		makevarnotlove(0x5201,"_MMC5_SP_SCROLL",1);
+		makevarnotlove(0x5202,"_MMC5_SP_PAGE",2);
+		makevarnotlove(0x5204,"_MMC5_IRQ_ENABLE",1);
+		makevarnotlove(0x5205,"_MMC5_MUL0",1);
+		makevarnotlove(0x5206,"_MMC5_MUL1",1);
+		makevarnotlove(0x5C00,"_MMC5_EXRAM",1024);
+//*/
 
 //	MakeName(0x2000,"_PPU_CTRL");
 //	MakeName(0x2001,"_PPU_MASK");

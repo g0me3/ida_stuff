@@ -5,7 +5,11 @@
 // ======main control flags=======
 //#define START_MAKE_CODE_EA 0x100
 
-//#define MAKE_OFFSETS
+#define MAKE_CODE
+#define MAKE_OFFSETS
+	#define FORBID_OFFSETS_BC
+	#define FORBID_OFFSETS_DE
+	#define FORBID_OFFSETS_HL
 //#define MAKE_CODE_UNK
 //#define MAKE_CODE_UNK_BYTE
 //#define MAKE_DATA_BYTE
@@ -13,19 +17,19 @@
 //#define CLEAR_UNUSED
 #define MMC_PRG_SET_DETECT
 #define MMC_PRG_PROC_DETECT
-//#define SWITCH_DETECT_A
+#define SWITCH_DETECT_A
 #define SWITCH_DETECT_B
-//#define MMC_DEFAULT_BANK 1
+#define MMC_DEFAULT_BANK 1
 
 // ========MMC control values========
 #define PRG_CMD_SIZE 10
 
-#define MMC_SET_OFS0 0x0457
+#define MMC_SET_OFS0 0x017C
 //#define MMC_SET_OFS1 0x0a5a
-#define MMC_RESTORE_OFS 0x3F22
+//#define MMC_RESTORE_OFS 0xc3a
 
-//#define MMC_SET_OPC0 0xC7
-//#define MMC_SET_OPC1 0xEF
+//#define MMC_SET_OPC0 0xFF
+//#define MMC_SET_OPC1 0xFF
 //#define MMC_RESTORE_OPC 0xCF
 
 //#define MMC_PRG1_OPC 0xF7
@@ -37,28 +41,28 @@
 //#define MMC_PRG7_OPC 0xC7
 //#define MMC_PRGF_OPC 0xCF
 
-//#define MMC_PRG1_PROC 0x0334
-//#define MMC_PRG2_PROC 0x341
-#define MMC_PRG3_PROC 0x627
-//#define MMC_PRG4_PROC MMC_PRG3_PROC+5
-//#define MMC_PRG5_PROC MMC_PRG4_PROC+5
-//#define MMC_PRG6_PROC MMC_PRG5_PROC+5
-//#define MMC_PRG7_PROC MMC_PRG6_PROC+5
+//#define MMC_PRG1_PROC 0x0c43
+//#define MMC_PRG2_PROC MMC_PRG1_PROC+0xC
+//#define MMC_PRG3_PROC MMC_PRG2_PROC+0xC
+//#define MMC_PRG4_PROC MMC_PRG3_PROC+0xC
+//#define MMC_PRG5_PROC MMC_PRG4_PROC+0xC
+//#define MMC_PRG6_PROC MMC_PRG5_PROC+0xC
+//#define MMC_PRG7_PROC MMC_PRG6_PROC+0xC
 
-#define MMC_PRG8_PROC 0x62C
-#define MMC_PRG9_PROC 0x631
+//#define MMC_PRG8_PROC 0x62C
+//#define MMC_PRG9_PROC 0x631
 //#define MMC_PRGA_PROC 0x631
 //#define MMC_PRGB_PROC MMC_PRGA_PROC+5
-#define MMC_PRGC_PROC 0x636
-#define MMC_PRGD_PROC 0x63B
-#define MMC_PRGE_PROC 0x640
+//#define MMC_PRGC_PROC 0x636
+//#define MMC_PRGD_PROC 0x63B
+//#define MMC_PRGE_PROC 0x640
 //#define MMC_PRGF_PROC MMC_PRGE_PROC+5
 
 // =======manual switch opcodes======
-//#define SWITCH_OPC 0xC7
+//#define SWITCH_OPC 0xCF
 //#define SWITCH_OFS 0x06C1
 
-//#define CUSTOM_TABLE_JUMP0 "21 ?? ?? CD 5B 07"
+//#define CUSTOM_TABLE_JUMP0 "21 ?? ?? FF CF E9"
 //#define CUSTOM_TABLE_JUMP_OFS0 1
 
 //#define CUSTOM_TABLE_JUMP1 "CB 27 21 ?? ?? CD ?? ?? 2A 66 6F E9"
@@ -71,16 +75,19 @@
 //#define CUSTOM_TABLE_JUMP_OFS3 1
 
 // ====manual farcall parameters=====
-//#define FARCALL_OPC 0xC7
-//#define FARCALL_BOFS 3
-//#define FARCALL_WOFS 1
-//#define FARCALL_SIZE 3
-//#define FARCALL_PARAM
+#define FARCALL_OPC 0xE7
+#define FARCALL_BOFS 1
+#define FARCALL_WOFS 2
+#define FARCALL_SIZE 2
+#define FARCALL_PARAM
 //#define FARCALL_EXEC
+#define FARCALL_SYS
 
-//#define FARCALL_OFS0 0x056B
-//#define FARCALL_BOFS0 5
-//#define FARCALL_WOFS0 3
+//#define FARCALL_OFS0 0x09C8
+//#define FARCALL_OFS0 0x0A5E
+//#define FARCALL_BOFS0 -4
+//#define FARCALL_WOFS0 -5
+//#define FARCALL_SYS0
 //#define FARCALL_SIZE0 3
 //#define FARCALL_PARAM0
 
@@ -112,52 +119,67 @@
 //#define FARCALL_WOFS_HI1 -5
 
 // ====manual farofs parameters=====
-//#define FPRN0	"21 ?? ?? 0E ?? CD EA 0A"
-//#define FPRN0_B	4
-//#define FPRN0_W	1
-//#define FPRN0_C 1
+//#define FPRN0	"3E ?? 21 ?? ?? CD 4F 20"
+//#define FPRN0_B	1
+//#define FPRN0_W	3
+//#define FPRN0_C 0
 
-//#define FPRN1	"3E ?? EA ?? ?? 21 ?? ?? Cd 21 35"
+//#define FPRN1	"3E ?? 21 ?? ?? CD 12 21"
 //#define FPRN1_B	1
-//#define FPRN1_W	6
-//#define FPRN1_C	1
+//#define FPRN1_W	3
+//#define FPRN1_C	0
 
-//#define FPRN2	"21 ?? ?? 0E ?? CD EC 29"
-//#define FPRN2_B	4
-//#define FPRN2_W	1
-//#define FPRN2_C	1
+//#define FPRN2	"06 ?? 21 ?? ?? 0E ?? 11 ?? ?? CD 31 03"
+//#define FPRN2_B	1
+//#define FPRN2_W	3
+//#define FPRN2_C	0
 
-//#define FPRN3	"3E ?? 21 ?? ??"
+//#define FPRN3	"3E ?? 21 ?? ?? 11 ?? ?? 01 ?? ?? CD 0E 04"
 //#define FPRN3_B	1
 //#define FPRN3_W	3
 //#define FPRN3_C	0
 
-//#define FPRN4	"06 ?? 21 ?? ??"
+//#define FPRN4	"06 ?? 21 ?? ?? 0E ?? 11 ?? ?? CD 88 24"
 //#define FPRN4_B	1
 //#define FPRN4_W	3
 //#define FPRN4_C	0
 
-//#define FPRN5	"16 ?? 21 ?? ??"
+//#define FPRN5	"06 ?? 21 ?? ?? 0E ?? 11 ?? ?? CD 16 25"
 //#define FPRN5_B	1
 //#define FPRN5_W	3
 //#define FPRN5_C	0
 
-//#define FPRN6	"06 ?? 21 ?? ?? 0E ?? 11 ?? ?? ?? 5E 05"
+//#define FPRN6	"06 ?? 21 ?? ?? 0E ?? 11 ?? ?? CD 72 03"
 //#define FPRN6_B	1
 //#define FPRN6_W	3
 //#define FPRN6_C	0
 
-//#define FPRN7	"21 ?? ?? 3E ?? ?? ?? E1 F1"
-//#define FPRN7_B	4
-//#define FPRN7_W	1
-//#define FPRN7_C	1
+//#define FPRN7	"3E ?? 21 ?? ?? 11 ?? ?? 01 ?? ?? CD 9A 04"
+//#define FPRN7_B	1
+//#define FPRN7_W	3
+//#define FPRN7_C	0
 
-//#define FPRN0B	"3E ?? EA 28 C9 3E ?? EA 29 C9 3E ?? EA 2A C9"
+//#define FPRN8	"3E ?? 21 ?? ?? 01 ?? ?? CD 7E 08"
+//#define FPRN8_B	1
+//#define FPRN8_W	3
+//#define FPRN8_C	0
+
+//#define FPRN9	"06 ?? 21 ?? ?? CD 17 05"
+//#define FPRN9_B	1
+//#define FPRN9_W	3
+//#define FPRN9_C	1
+
+//#define FPRNA	"3E ?? 21 ?? ?? 11 ?? ?? Cd 0D 3E"
+//#define FPRNA_B	1
+//#define FPRNA_W	3
+//#define FPRNA_C	0
+
+//#define FPRN0B	"FA ?? ?? C6 ?? 4F 06 ??30 01 04"
 //#define FPRN0B_B	11
 //#define FPRN0_WL	1
 //#define FPRN0_WH	6
 
-// ====custom farofs parameters=====
+// ====custom farofs parameters=====c
 //#define CUSTOM_PATTERN0	"3E ?? EA 14 C3 3E ?? EA 15 C3 3E ??"
 //#define CUSTOM_PATTERN0_MODE 4
 //#define CUSTOM_PATTERN0_B	-1
@@ -244,6 +266,8 @@ static code_patterns(void) {
 	find_code("AF F5 D5 5F 73 23 0B 79 B0 20 F9 D1 F1 C9",			"_zeromem");
 
 	find_code("76 FA ?? ?? A7 28 F9 AF EA ?? ?? C9",				"_wait_for_nmi");
+	find_code("AF EA ?? ?? 76 FA ?? ?? B7 28 F9 C9",				"_wait_for_nmi");
+
 	find_code("81 4F D0 04 C9",										"_bc_add_a");
 	find_code("83 5F D0 14 C9",										"_de_add_a");
 	find_code("85 6F D0 24 C9",										"_hl_add_a");
@@ -300,6 +324,30 @@ static code_patterns(void) {
 #endif
 #ifdef FPRN7
 	cnt = find_far_offset_patterns(FPRN7, FPRN7_B, FPRN7_W, FPRN7_C, cnt);
+#endif
+#ifdef FPRN8
+	cnt = find_far_offset_patterns(FPRN8, FPRN8_B, FPRN8_W, FPRN8_C, cnt);
+#endif
+#ifdef FPRN9
+	cnt = find_far_offset_patterns(FPRN9, FPRN9_B, FPRN9_W, FPRN9_C, cnt);
+#endif
+#ifdef FPRNA
+	cnt = find_far_offset_patterns(FPRNA, FPRNA_B, FPRNA_W, FPRNA_C, cnt);
+#endif
+#ifdef FPRNB
+	cnt = find_far_offset_patterns(FPRNB, FPRNB_B, FPRNB_W, FPRNB_C, cnt);
+#endif
+#ifdef FPRNC
+	cnt = find_far_offset_patterns(FPRNC, FPRNC_B, FPRNC_W, FPRNC_C, cnt);
+#endif
+#ifdef FPRND
+	cnt = find_far_offset_patterns(FPRND, FPRND_B, FPRND_W, FPRND_C, cnt);
+#endif
+#ifdef FPRNE
+	cnt = find_far_offset_patterns(FPRNE, FPRNE_B, FPRNE_W, FPRNE_C, cnt);
+#endif
+#ifdef FPRNF
+	cnt = find_far_offset_patterns(FPRNF, FPRNF_B, FPRNF_W, FPRNF_C, cnt);
 #endif
 	if(cnt>0)
 		Message("far offset patterns summary: %d has found\n",cnt);
@@ -458,7 +506,7 @@ static main(void) {
 
 		Message("Total Banks: %d\n", banksnum);
 
-		code_patterns();
+//		code_patterns();
 
 #ifdef MMC_PRG_PROC_DETECT
 		if(prgset == BADADDR) prgset = find_mmc_prg("EA ?? ?? EA ?? ?? C9",1, 4,	"_mmc_prg_set");
@@ -565,7 +613,9 @@ static main(void) {
 //						if(segeai>START_MAKE_CODE_EA) { // damn emulators with real firmware execution!
 							if(isData(GetFlags(segeai)))
 								MakeUnknown(segeai, 3, DOUNK_SIMPLE);
+#ifdef MAKE_CODE
 							MakeCode(segeai);
+#endif
 //						}
 						codelog++;
 					} else {
@@ -733,8 +783,19 @@ static main(void) {
 									make_code(temp0 + temp1);
 									Wait();
 		#else
+			#ifdef FARCALL_SYS0
+									auto ass1 = MK_FP(AskSelector(Byte(segeai+FARCALL_BOFS0)), 0);
+									ass1 = ass1 + Word(ass1 + (Byte(segeai+FARCALL_WOFS0) << 1) + 0x4001);
+									OpNumber(segeai - 6, 1);
+									SetManualInsn(segeai, form("FLOAD   %s", Name(ass1)));
+//									MakeNameAuto(segeai, form("_j%s", Name(ass1)));
+									add_dref(segeai, ass1, dr_O|XREF_USER);
+//									AddCodeXref(segeai, ass1, fl_CF|XREF_USER);
+//									make_code(ass1);
+			#else
 //									if((Byte(segeai+FARCALL_BOFS-1)==FARCALL_BOFS_OPC)&&(Word(segeai+FARCALL_WOFS-1)==FARCALL_WOFS_OPC)) {
 										far_ptr_code(segeai, FARCALL_BOFS0, FARCALL_WOFS0, 1, -1);
+			#endif
 //									}
 		#endif
 	#endif
@@ -896,7 +957,7 @@ static main(void) {
 #ifdef FARCALL_OPC
 								if(opcode==FARCALL_OPC) {
 									farcall_cnt++;
-#ifdef FARCALL_PARAM
+	#ifdef FARCALL_PARAM
 /* CUSTOM FARCALL
 									MakeUnknown(segeai+1, 5, DOUNK_SIMPLE);
 									MakeWord(segeai+FARCALL_WOFS);
@@ -907,26 +968,62 @@ static main(void) {
 									Wait();
 //*/
 //* REGULAR FARCALL
+		#ifdef FARCALL_SYS
+									MakeUnknown(segeai+1, 2, DOUNK_SIMPLE);
+									MakeWord(segeai+1);
+									auto ass0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFS)), 0);
+									ass0 = ass0 + Word(ass0 + (Byte(segeai + FARCALL_WOFS) << 1) + 0x4000);
+									SetManualInsn(segeai, form("FJSR    %s", Name(ass0)));
+									if(Byte(segeai + 3)==0xC9)
+										MakeNameAuto(segeai, form("_j%s", Name(ass0)));
+									SetManualInsn(segeai+1, "ENDM");
+									AddCodeXref(segeai, ass0, fl_CF|XREF_USER);
+//									make_code(ass0);
+		#else
 									MakeUnknown(segeai+1, FARCALL_SIZE, DOUNK_SIMPLE);
 									MakeWord(segeai+FARCALL_WOFS);
-#ifdef FARCALL_EXEC
+			#ifdef FARCALL_EXEC
 									far_ptr_code(segeai, FARCALL_BOFS, FARCALL_WOFS, 0, 0);
-#else
+			#else
 									far_ptr(segeai, FARCALL_BOFS, FARCALL_WOFS, 0, 0);
-#endif
+			#endif
 									MakeByte(segeai+FARCALL_BOFS);
+		#endif
 									make_code(segeai+1+FARCALL_SIZE);
 									Wait();
 //*/
-#else
+	#else
+		#ifdef FARCALL_SYS
+									auto ass0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFS)), 0);
+									ass0 = ass0 + Word(ass0 + (Byte(segeai + FARCALL_WOFS) << 1) + 0x4001);
+									SetManualInsn(segeai, form("FJSR    %s", Name(ass0)));
+									OpNumber(segeai - 3, 1);
+//									MakeNameAuto(segeai, form("_j%s", Name(ass0)));
+									AddCodeXref(segeai, ass0, fl_CF|XREF_USER);
+//									make_code(ass0);
+		#else
 									far_ptr_code(segeai, FARCALL_BOFS, FARCALL_WOFS, 1, -1);
-#endif
+		#endif
+	#endif
 								}
 #endif
 
 #ifdef MAKE_OFFSETS
-								if(opvalue!=-1)
-									makeOffset(segeai,opvalue,seg,j,banksnum,curbank);
+								if(opvalue!=-1) {
+									auto forbid = 0;
+// prevent from doing a garbage offsets usually at DE/BC
+#ifdef FORBID_OFFSETS_BC
+									if(opcode == 0x01) forbid = 1;
+#endif
+#ifdef FORBID_OFFSETS_DE
+									if(opcode == 0x11) forbid = 1;
+#endif
+#ifdef FORBID_OFFSETS_HL
+									if(opcode == 0x21) forbid = 1;
+#endif
+									if(forbid == 0)
+										makeOffset(segeai,opvalue,seg,j,banksnum,curbank);
+								}
 #endif
 #ifdef MMC_SET_OPC0
 								if(opcode==MMC_SET_OPC0) {
@@ -1170,7 +1267,7 @@ static main(void) {
 			Message("mmc prg bank set operations detected!\n");
 		}
 
-//		code_patterns();
+		code_patterns();
 
 		if(farcall_s>0)
 			Message("far calls summary: %d has found\n",farcall_s);
@@ -1235,7 +1332,7 @@ static makeVector(ea, name) {
 			offset = -1;
 		if(offset != -1) {
 //			makeOffset(ea,offset,0,1,0,1);
-			MakeNameAuto(getBase(offset),name);
+			MakeNameAuto(getBase(offset)+offset,name);
 		}
 	}
 }
@@ -1596,4 +1693,33 @@ static cdl_chunk_search(cdl, chunk, max) {
 		}
 	}
 	return ret;
+}
+
+static ptr_table_far(ea, farbank, docode) {
+	auto i = 0, w0, stop = 0;
+	auto base, eabank = GetSegmentAttr(ea, SEGATTR_SEL);
+	do {
+		stop = isRef(GetFlags(ea + i)) | isRef(GetFlags(ea + i + 1));
+		if(((i&1)==0)&&(!stop)){
+			MakeUnknown(ea+i, 2, DOUNK_SIMPLE);
+			MakeWord(ea+i);
+			w0=Word(ea+i);
+			if(w0<0x4000) {
+				base = MK_FP(AskSelector(0), 0);
+			} else if(w0<0x8000) {
+				if((eabank>0)||(farbank==-1))
+					base = MK_FP(AskSelector(eabank), 0);
+				else
+					base = MK_FP(AskSelector(farbank), 0);
+			}
+			OpOffEx(ea+i, 0, REF_OFF16, -1, base, 0);
+			if(docode) {
+				MakeCode(base+w0);
+				AutoMark(base+w0, AU_CODE);
+				Wait();
+			}
+			Wait();
+		}
+		i = i + 2;
+	} while (!stop && (i < 0x10000));
 }
