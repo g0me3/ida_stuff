@@ -145,9 +145,27 @@ static custom_call_search_ex(pat, a, c, d, e, f, instr) {
 	}
 }
 
+static custom_far_call_search(pat, bank, ofs, instr) {
+	auto ea = -1, size = ((strlen(pat) + 1) / 3), temp0, temp1, name, b;
+	while((ea=FindBinary(ea + 1, SEARCH_DOWN, pat))!=BADADDR) {
+		b = Byte(ea + bank);
+		temp0 = MK_FP(AskSelector(b), 0);
+		temp1 = Word(ea + ofs);
+		if(temp1 >= 0x4000)
+			temp1 = temp1 + temp0;
+//		MakeNameAuto(temp0, ea + ofs, form("_far_prg%02x_sub%08x", b, temp1));
+		name = Name(temp1);
+//		Message("found pattern at 0x%08x (ref to 0x%08x, name \"%s\")\n", ea, temp1, name);
+		SetManualInsn(ea, form(instr, name));
+		AddCodeXref(ea, temp1, fl_CF|XREF_USER);
+		make_data_array(ea + 1, size - 1, "");
+		SetManualInsn(ea + 1, "ENDM");
+	}
+}
+
 static far_ptr_search() {
-	auto ea, temp0, temp1;
 	Message("search start\n");
+
 //	far_sys_call_search("A9 ?? 85 58 A9 ?? 85 59 20 0B CC", 1, 5, "FJSR");	// dragon ball z
 //	far_sys_call_search("A9 ?? 85 58 A9 ?? 8D 59 00 20 0B CC", 1, 5, "FJSR");
 //	far_sys_call_search("A9 ?? 85 58 A9 ?? 85 59 4C 0B CC", 1, 5, "FJMP");
@@ -188,12 +206,54 @@ static far_ptr_search() {
 
 // gb death track
 
-// Nintama eawase
+//	custom_far_call_search("F5 E5 21 ?? ?? 3E ?? EF", 6, 3, "FJSR    %s");
+//	custom_far_call_search("F5 E5 21 ?? ?? 3E ?? F7", 6, 3, "FJMP    %s");
 
-	Message("search is over\n");
+//	Message("search is over\n");
+}
+
+static MakeNameAuto(base, ea, name) {
+	auto ofs = Word(ea);
+	if(ofs < 0x4000)
+		base = MK_FP(AskSelector(0), 0);
+	ea = base + ofs;
+	Message("    >set name '%s' at 0x%08x (base %08x)\n", name, ea, base);
+	if(MakeNameEx(ea,name,SN_CHECK|SN_NOWARN)==0) {
+		auto res, nname, nc = 0;
+		do {
+			nname = form("%s_%d",name,nc);
+			nc++;
+			res = MakeNameEx(ea,nname,SN_CHECK|SN_NOWARN);
+		} while ((res == 0)&&(nc<100));
+	}
+}
+
+static input_switch_search() {
+	auto ea = -1;
+	auto base, ofs;
+	while((ea = FindBinary(ea + 1, SEARCH_DOWN, "21 ?? ?? CD 35 04"))!=BADADDR) {
+		base = MK_FP(AskSelector(GetSegmentAttr(ea, SEGATTR_SEL)), 0);
+		ofs = base + Word(ea + 1);
+		Message("found pattern at 0x%08x dst table 0x%08x\n", ea, ofs);
+		MakeNameAuto(base, ofs, "_menu_idle");
+		MakeNameAuto(base, ofs + 2, "_menu_press_D");
+		MakeNameAuto(base, ofs + 4, "_menu_press_U");
+		MakeNameAuto(base, ofs + 6, "_menu_press_L");
+		MakeNameAuto(base, ofs + 8, "_menu_press_R");
+		MakeNameAuto(base, ofs + 10, "_menu_press_START");
+		MakeNameAuto(base, ofs + 12, "_menu_press_SELECT");
+		MakeNameAuto(base, ofs + 14, "_menu_press_B");
+		MakeNameAuto(base, ofs + 16, "_menu_press_A");
+	}
 }
 
 static main(void) {
+
+//	input_switch_search();
+
+	garbage_collector();
+
+//	far_ptr_search();
 
 //	                   opcode,  size, segmask, bankop, ofsop, delta, shift, dobankbyte
 //	parametric_farcall("20 D6 F7", 3,    0x3F,      5,     3,    -1,     0, 1);
@@ -263,8 +323,9 @@ static main(void) {
 //	parametric_fixsize("20 AD F7", 2);
 //	parametric_fixsize("20 80 F7", 2);
 
-//	parametric_stopbytes("CD A5 2D", "00");
-//	parametric_stopbytes("CD 2E 78", "00");
+//	parametric_stopbytes("CD DE 0C", "65");
+//	parametric_stopbytes("CD 63 09", "65");
+//	parametric_stopbytes("CD 99 0E", "00");
 //	parametric_stopbytes("CD B8 77", "00 00");
 //	parametric_stopbytes("20 DE E9", "FF FF 00");
 //	parametric_stopbytes("20 21 EA", "FF FF 00");
@@ -282,10 +343,6 @@ static main(void) {
 //	make_8bit_far_tbl(0xed3a0,0xed3b2,0xed3c4, 0, 0);
 
 //	AddHotkey("Shift-M", "script_convert0");
-
-	garbage_collector();
-
-//	far_ptr_search();
 
 //	SetCharPrm(INF_GENFLAGS,INFFL_LZERO|INFFL_ALLASM);	// generate leading zeroes in numbers
 

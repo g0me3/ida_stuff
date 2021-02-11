@@ -17,18 +17,18 @@
 //#define CLEAR_UNUSED
 #define MMC_PRG_SET_DETECT
 #define MMC_PRG_PROC_DETECT
-#define SWITCH_DETECT_A
-#define SWITCH_DETECT_B
-#define MMC_DEFAULT_BANK 1
+//#define SWITCH_DETECT_A
+//#define SWITCH_DETECT_B
+//#define MMC_DEFAULT_BANK 1
 
 // ========MMC control values========
 #define PRG_CMD_SIZE 10
 
-#define MMC_SET_OFS0 0x017C
-//#define MMC_SET_OFS1 0x0a5a
-//#define MMC_RESTORE_OFS 0xc3a
+//#define MMC_SET_OFS0 0x0507
+//#define MMC_SET_OFS1 0x9DF
+//#define MMC_RESTORE_OFS 0x051F
 
-//#define MMC_SET_OPC0 0xFF
+//#define MMC_SET_OPC0 0xCF
 //#define MMC_SET_OPC1 0xFF
 //#define MMC_RESTORE_OPC 0xCF
 
@@ -41,31 +41,30 @@
 //#define MMC_PRG7_OPC 0xC7
 //#define MMC_PRGF_OPC 0xCF
 
-//#define MMC_PRG1_PROC 0x0c43
-//#define MMC_PRG2_PROC MMC_PRG1_PROC+0xC
-//#define MMC_PRG3_PROC MMC_PRG2_PROC+0xC
-//#define MMC_PRG4_PROC MMC_PRG3_PROC+0xC
-//#define MMC_PRG5_PROC MMC_PRG4_PROC+0xC
-//#define MMC_PRG6_PROC MMC_PRG5_PROC+0xC
-//#define MMC_PRG7_PROC MMC_PRG6_PROC+0xC
-
-//#define MMC_PRG8_PROC 0x62C
-//#define MMC_PRG9_PROC 0x631
-//#define MMC_PRGA_PROC 0x631
+//#define MMC_PRG1_PROC 0x332
+//#define MMC_PRG2_PROC 0x33F
+//#define MMC_PRG3_PROC MMC_PRG2_PROC+5
+//#define MMC_PRG4_PROC MMC_PRG3_PROC+5
+//#define MMC_PRG5_PROC MMC_PRG4_PROC+5
+//#define MMC_PRG6_PROC MMC_PRG5_PROC+5
+//#define MMC_PRG7_PROC MMC_PRG6_PROC+5
+//#define MMC_PRG8_PROC MMC_PRG7_PROC+5
+//#define MMC_PRG9_PROC MMC_PRG8_PROC+5
+//#define MMC_PRGA_PROC MMC_PRG9_PROC+5
 //#define MMC_PRGB_PROC MMC_PRGA_PROC+5
-//#define MMC_PRGC_PROC 0x636
-//#define MMC_PRGD_PROC 0x63B
-//#define MMC_PRGE_PROC 0x640
+//#define MMC_PRGC_PROC MMC_PRGB_PROC+5
+//#define MMC_PRGD_PROC MMC_PRGC_PROC+5
+//#define MMC_PRGE_PROC MMC_PRGD_PROC+5
 //#define MMC_PRGF_PROC MMC_PRGE_PROC+5
 
 // =======manual switch opcodes======
-//#define SWITCH_OPC 0xCF
+//#define SWITCH_OPC 0xC7
 //#define SWITCH_OFS 0x06C1
 
-//#define CUSTOM_TABLE_JUMP0 "21 ?? ?? FF CF E9"
+//#define CUSTOM_TABLE_JUMP0 "21 ?? ?? C3 50 04"
 //#define CUSTOM_TABLE_JUMP_OFS0 1
 
-//#define CUSTOM_TABLE_JUMP1 "CB 27 21 ?? ?? CD ?? ?? 2A 66 6F E9"
+//#define CUSTOM_TABLE_JUMP1 "21 ?? ?? CD 50 04"
 //#define CUSTOM_TABLE_JUMP_OFS1 3
 
 //#define CUSTOM_TABLE_JUMP2 "21 ?? ?? CD DA 11 CD 9C 14"
@@ -75,18 +74,17 @@
 //#define CUSTOM_TABLE_JUMP_OFS3 1
 
 // ====manual farcall parameters=====
-#define FARCALL_OPC 0xE7
-#define FARCALL_BOFS 1
-#define FARCALL_WOFS 2
-#define FARCALL_SIZE 2
-#define FARCALL_PARAM
+//#define FARCALL_OPC 0xC7
+//#define FARCALL_BOFS 3
+//#define FARCALL_WOFS 1
+//#define FARCALL_SIZE 3
+//#define FARCALL_PARAM
 //#define FARCALL_EXEC
-#define FARCALL_SYS
+//#define FARCALL_SYS
 
-//#define FARCALL_OFS0 0x09C8
-//#define FARCALL_OFS0 0x0A5E
-//#define FARCALL_BOFS0 -4
-//#define FARCALL_WOFS0 -5
+//#define FARCALL_OFS0 0x3991
+//#define FARCALL_BOFS0 3
+//#define FARCALL_WOFS0 4
 //#define FARCALL_SYS0
 //#define FARCALL_SIZE0 3
 //#define FARCALL_PARAM0
@@ -119,49 +117,50 @@
 //#define FARCALL_WOFS_HI1 -5
 
 // ====manual farofs parameters=====
-//#define FPRN0	"3E ?? 21 ?? ?? CD 4F 20"
-//#define FPRN0_B	1
-//#define FPRN0_W	3
+//Jinsei Game
+//#define FPRN0	"3E ?? E0 9F 11 ?? ?? 21 ?? ?? ?? A7 06"
+//#define FPRN0_B 1
+//#define FPRN0_W 5
 //#define FPRN0_C 0
 
-//#define FPRN1	"3E ?? 21 ?? ?? CD 12 21"
+//#define FPRN1	"3E ?? E0 9F 21 ?? ?? 11 ?? ?? ?? A7 06"
 //#define FPRN1_B	1
-//#define FPRN1_W	3
+//#define FPRN1_W	8
 //#define FPRN1_C	0
 
-//#define FPRN2	"06 ?? 21 ?? ?? 0E ?? 11 ?? ?? CD 31 03"
+//#define FPRN2	"3E ?? E0 9F CD 36 04 11 ?? ?? 21 ?? ?? ?? A7 06"
 //#define FPRN2_B	1
-//#define FPRN2_W	3
+//#define FPRN2_W	8
 //#define FPRN2_C	0
 
-//#define FPRN3	"3E ?? 21 ?? ?? 11 ?? ?? 01 ?? ?? CD 0E 04"
+//#define FPRN3	"3E ?? E0 9F 21 ?? ?? 11 ?? ?? 01 ?? ?? ?? CF 04"
 //#define FPRN3_B	1
-//#define FPRN3_W	3
+//#define FPRN3_W	5
 //#define FPRN3_C	0
 
-//#define FPRN4	"06 ?? 21 ?? ?? 0E ?? 11 ?? ?? CD 88 24"
+//#define FPRN4	"3E ?? E0 9F 11 ?? ?? 21 ?? ?? CD 34 06"
 //#define FPRN4_B	1
-//#define FPRN4_W	3
+//#define FPRN4_W	5
 //#define FPRN4_C	0
 
-//#define FPRN5	"06 ?? 21 ?? ?? 0E ?? 11 ?? ?? CD 16 25"
+//#define FPRN5	"3E ?? E0 9F 21 ?? ?? 11 ?? ?? 01 ?? ?? CD D9 09"
 //#define FPRN5_B	1
-//#define FPRN5_W	3
+//#define FPRN5_W	5
 //#define FPRN5_C	0
 
-//#define FPRN6	"06 ?? 21 ?? ?? 0E ?? 11 ?? ?? CD 72 03"
+//#define FPRN6	"3E ?? E0 9F 21 ?? ?? 11 ?? ?? 01 ?? ?? CD 5F 06"
 //#define FPRN6_B	1
-//#define FPRN6_W	3
+//#define FPRN6_W	8
 //#define FPRN6_C	0
 
-//#define FPRN7	"3E ?? 21 ?? ?? 11 ?? ?? 01 ?? ?? CD 9A 04"
+//#define FPRN7	"3E ?? E0 9F 21 ?? ?? 11 ?? ?? CD 34 06"
 //#define FPRN7_B	1
-//#define FPRN7_W	3
+//#define FPRN7_W	8
 //#define FPRN7_C	0
 
-//#define FPRN8	"3E ?? 21 ?? ?? 01 ?? ?? CD 7E 08"
+//#define FPRN8	"3E ?? E0 9F CD ?? ?? 21 ?? ?? 11 ?? ?? CD A7 06"
 //#define FPRN8_B	1
-//#define FPRN8_W	3
+//#define FPRN8_W	11
 //#define FPRN8_C	0
 
 //#define FPRN9	"06 ?? 21 ?? ?? CD 17 05"
@@ -193,8 +192,8 @@
 //#define CUSTOM_PATTERN1_ARG0 -1
 
 // ========parametric patterns=======
-//#define PARAMETRIC_OPC0 0xEF
-//#define PARAMETRIC_SIZE0 1
+//#define PARAMETRIC_OPC0 0xD7
+//#define PARAMETRIC_SIZE0 2
 //#define PARAMETRIC_OPC1 0xEF
 //#define PARAMETRIC_SIZE1 1
 //#define PARAMETRIC_OPC2 0xE7
@@ -218,6 +217,14 @@
 //#define PARAMETRIC_OSIZE6 1
 //#define PARAMETRIC_OFS7 0x7986
 //#define PARAMETRIC_OSIZE7 4
+
+static make_new_comment(ea, cmnt) {
+	auto curcmnt = CommentEx(ea, 0);
+	if(curcmnt == "")
+		MakeComm(ea, form("new %s", cmnt));
+	else
+		MakeComm(ea, cmnt);
+}
 
 static code_patterns(void) {
 	auto cnt;
@@ -281,6 +288,7 @@ static code_patterns(void) {
 	find_code("87 ?? 2A 66 6F C9",									"_hl_add_a_mul2_get_ptr_hl");
 	find_code("87 85 6F 30 01 24 2A 66 6F C9",						"_hl_add_a_mul2_get_ptr_hl");
 	find_code("87 85 6F 3E 00 8C 67 2A 66 6F C9",					"_hl_add_a_mul2_get_ptr_hl");
+	find_code("4F 06 00 CB 21 CB 10 09 2A 66 6F C9",				"_hl_add_a_mul2_get_ptr_hl");
 
 	find_code("21 ?? ?? CD ?? ?? CD ?? ?? F0 00",					"_sgb_detect");
 	find_code("7E E6 07 C8 47 0E 00 C5 3E 00 E2 3E 30 E2 06 10",	"_sgb_cmd");
@@ -362,6 +370,7 @@ static code_patterns(void) {
 
 #ifdef SWITCH_DETECT_A
 	cnt = 0;
+
 	cnt = find_table_jumps("06 00 21 ?? ?? 09 09 2A 66 6F E9", 			3, cnt);
 	cnt = find_table_jumps("21 ?? ?? 09 2A 66 6F E9", 					1, cnt);
 //	cnt = find_table_jumps("06 00 4F CB 21 21 ?? ?? 09 2A 66 6F E9", 	6, cnt);
@@ -598,16 +607,17 @@ static main(void) {
 							MakeByte(segeai);
 #endif
 						}
-						MakeComm(segeai, "data");
+						make_new_comment(segeai, "data");
 						datalog++;
 					} else if(cd & 1) {
 #ifdef CLEAR_UNUSED
 						MakeComm(segeai, "");
 #endif
+//						Message("mark code at 0x%08X\n",segeai);
 					    if(cd & 4) {
-							MakeComm(segeai, "code and data");
+							make_new_comment(segeai, "code and data");
 						} else {
-							MakeComm(segeai, "code");
+							make_new_comment(segeai, "code");
 						}
 
 //						if(segeai>START_MAKE_CODE_EA) { // damn emulators with real firmware execution!
@@ -1012,15 +1022,18 @@ static main(void) {
 								if(opvalue!=-1) {
 									auto forbid = 0;
 // prevent from doing a garbage offsets usually at DE/BC
+
 #ifdef FORBID_OFFSETS_BC
-									if(opcode == 0x01) forbid = 1;
+									if((opcode == 0x01) && (opvalue < 0x8000)) forbid = 1;
 #endif
 #ifdef FORBID_OFFSETS_DE
-									if(opcode == 0x11) forbid = 1;
+									if((opcode == 0x11) && (opvalue < 0x8000)) forbid = 1;
 #endif
 #ifdef FORBID_OFFSETS_HL
-									if(opcode == 0x21) forbid = 1;
+									if((opcode == 0x21) && (opvalue < 0x8000)) forbid = 1;
 #endif
+									if((opcode == 0xEA) && (opvalue < 0x8000)) forbid = 1;
+
 									if(forbid == 0)
 										makeOffset(segeai,opvalue,seg,j,banksnum,curbank);
 								}
@@ -1300,7 +1313,7 @@ static MakeNameAuto(ea,name) {
 	}
 }
 
-static makeDataDup(sname, ofs, len, name) {
+static makeDataDup(sname, ofs, len, name, cmnt) {
 	auto seg, segea, ea;
 	seg = SegByName(sname);
 	segea = SegByBase(seg);
@@ -1309,7 +1322,8 @@ static makeDataDup(sname, ofs, len, name) {
 	MakeData(ea, FF_BYTE, len, 0);
 	SetArrayFormat(ea, AP_IDXHEX|AP_ALLOWDUPS, 0x10, 0);
 //	if(NameEx(BADADDR, ea)=="")
-		MakeNameAuto(ea,name);
+	MakeNameAuto(ea,name);
+	MakeRptCmt(ea,cmnt);
 }
 
 static makeVector(ea, name) {
@@ -1338,43 +1352,81 @@ static makeVector(ea, name) {
 }
 
 static MakeNames() {
-//	makeDataDup("ROM0",   0x2000, 0x01, "MMC_PRG");
-	makeDataDup("ROM0",   0x0104, 0x30, "GB_LOGO");
-	makeDataDup("ROM0",   0x0134, 0x10, "GB_TITLE");
+	makeDataDup("ROM0",   0x0104, 0x30, "_LOGO", "");
+	makeDataDup("ROM0",   0x0134, 0x10, "_TITLE", "");
 	MakeStr(0x0134, 0x0144);
-	makeDataDup("ROM0",   0x0144, 0x03, "");
-	makeDataDup("ROM0",   0x0147, 0x01, "GB_CART");
-	makeDataDup("ROM0",   0x0148, 0x01, "GB_ROM");
-	makeDataDup("ROM0",   0x0149, 0x01, "GB_RAM");
-	makeDataDup("ROM0",   0x014A, 0x01, "GB_LANG");
-	makeDataDup("ROM0",   0x014B, 0x01, "GB_MAKER");
-	makeDataDup("ROM0",   0x014C, 0x01, "GB_VER");
-	makeDataDup("ROM0",   0x014D, 0x01, "GB_CHECK");
-	makeDataDup("ROM0",   0x014E, 0x02, "GB_SUM");
-	makeDataDup("HWREGS", 0x00, 0x01, "PAD");
-	makeDataDup("HWREGS", 0x01, 0x01, "SIODATA");
-	makeDataDup("HWREGS", 0x02, 0x01, "SIOCONT");
-	makeDataDup("HWREGS", 0x04, 0x01, "COUNTER");
-	makeDataDup("HWREGS", 0x05, 0x01, "TIMER");
-	makeDataDup("HWREGS", 0x06, 0x01, "TIMERDIV");
-	makeDataDup("HWREGS", 0x07, 0x01, "TIMERCONT");
-	makeDataDup("HWREGS", 0x0F, 0x01, "IFLAGS");
-	makeDataDup("HWREGS", 0x10, 0x30, "SOUND");
-	makeDataDup("HWREGS", 0x40, 0x01, "LCDCONT");
-	makeDataDup("HWREGS", 0x41, 0x01, "LCDSTAT");
-	makeDataDup("HWREGS", 0x42, 0x01, "SCROLLY");
-	makeDataDup("HWREGS", 0x43, 0x01, "SCROLLX");
-	makeDataDup("HWREGS", 0x44, 0x01, "CURLINE");
-	makeDataDup("HWREGS", 0x45, 0x01, "CMPLINE");
-	makeDataDup("HWREGS", 0x46, 0x01, "DMACONT");
-	makeDataDup("HWREGS", 0x47, 0x01, "BGPAL");
-	makeDataDup("HWREGS", 0x48, 0x01, "OBJ0PAL");
-	makeDataDup("HWREGS", 0x49, 0x01, "OBJ1PAL");
-	makeDataDup("HWREGS", 0x4A, 0x01, "WNDPOSY");
-	makeDataDup("HWREGS", 0x4B, 0x01, "WNDPOSX");
-	makeDataDup("HWREGS", 0x4C, 0x14, "UNK_VIDEO");
-	makeDataDup("HWREGS", 0x70, 0x01, "GBC_WRAM_BANK");
-	makeDataDup("IENABLE", 0x0, 0x01, "_IENABLE");
+	makeDataDup("ROM0",   0x0144, 0x03, "", "");
+	makeDataDup("ROM0",   0x0147, 0x01, "_CART", "");
+	makeDataDup("ROM0",   0x0148, 0x01, "_ROM", "");
+	makeDataDup("ROM0",   0x0149, 0x01, "_RAM", "");
+	makeDataDup("ROM0",   0x014A, 0x01, "_LANG", "");
+	makeDataDup("ROM0",   0x014B, 0x01, "_MAKER", "");
+	makeDataDup("ROM0",   0x014C, 0x01, "_VER", "");
+	makeDataDup("ROM0",   0x014D, 0x01, "_CHECK", "");
+	makeDataDup("ROM0",   0x014E, 0x02, "_SUM", "");
+
+	makeDataDup("HWREGS", 0x00, 0x01, "_PAD", "");
+	makeDataDup("HWREGS", 0x01, 0x01, "_SIODATA", "");
+	makeDataDup("HWREGS", 0x02, 0x01, "_SIOCONT", "");
+	makeDataDup("HWREGS", 0x04, 0x01, "_COUNTER", "");
+	makeDataDup("HWREGS", 0x05, 0x01, "_TIMER", "");
+	makeDataDup("HWREGS", 0x06, 0x01, "_TIMERDIV", "");
+	makeDataDup("HWREGS", 0x07, 0x01, "_TIMERCONT", "Bit2    Start/Stop timer                      | COUNTING      | STOPPED\nBit1-0  Timer clock select:\n  00 - 4096Hz    01 - 262144Hz    10 - 65536Hz    11 - 16384Hz");
+	makeDataDup("HWREGS", 0x0F, 0x01, "_IFLAGS", "Bit4  Transition High->Low on pins P10-P13    | OCCURED       | NO\nBit3  End of serial I/O transfer              | OCCURED       | NO \nBit2  Timer overflow                          | OCCURED       | NO\nBit1  LCD controller interrupt [see LCDSTAT]  | OCCURED       | NO\nBit0  LCD vertical blanking impulse           | OCCURED       | NO");
+
+	makeDataDup("HWREGS", 0x10, 0x01, "_APU_C0_SWEEP", "");
+	makeDataDup("HWREGS", 0x11, 0x01, "_APU_C0_LEN", "");
+	makeDataDup("HWREGS", 0x12, 0x01, "_APU_C0_ENV", "");
+	makeDataDup("HWREGS", 0x13, 0x01, "_APU_C0_FREQL", "");
+	makeDataDup("HWREGS", 0x14, 0x01, "_APU_C0_FREQH", "");
+	makeDataDup("HWREGS", 0x16, 0x01, "_APU_C1_LEN", "");
+	makeDataDup("HWREGS", 0x17, 0x01, "_APU_C1_ENV", "");
+	makeDataDup("HWREGS", 0x18, 0x01, "_APU_C1_FREQL", "");
+	makeDataDup("HWREGS", 0x19, 0x01, "_APU_C1_FREQH", "");
+	makeDataDup("HWREGS", 0x1A, 0x01, "_APU_C2_ON", "");
+	makeDataDup("HWREGS", 0x1B, 0x01, "_APU_C2_LEN", "");
+	makeDataDup("HWREGS", 0x1C, 0x01, "_APU_C2_LEVEL", "");
+	makeDataDup("HWREGS", 0x1D, 0x01, "_APU_C2_FREQL", "");
+	makeDataDup("HWREGS", 0x1E, 0x01, "_APU_C2_FREQH", "");
+	makeDataDup("HWREGS", 0x20, 0x01, "_APU_C3_LEN", "");
+	makeDataDup("HWREGS", 0x21, 0x01, "_APU_C3_ENV", "");
+	makeDataDup("HWREGS", 0x22, 0x01, "_APU_C3_CNT", "");
+	makeDataDup("HWREGS", 0x23, 0x01, "_APU_C3_CTRL", "");
+	makeDataDup("HWREGS", 0x24, 0x01, "_APU_VOL", "");
+	makeDataDup("HWREGS", 0x25, 0x01, "_APU_OUT", "");
+	makeDataDup("HWREGS", 0x26, 0x01, "_APU_ON", "");
+	makeDataDup("HWREGS", 0x30, 0x10, "_APU_WAVE", "");
+
+	makeDataDup("HWREGS", 0x40, 0x01, "_LCDCONT", "Bit7  LCD operation                           | ON            | OFF\nBit6  Window Tile Table address               | 9C00-9FFF     | 9800-9BFF\nBit5  Window display                          | ON            | OFF\nBit4  Tile Pattern Table address              | 8000-8FFF     | 8800-97FF\nBit3  Background Tile Table address           | 9C00-9FFF     | 9800-9BFF\nBit2  Sprite size                             | 8x16          | 8x8\nBit1  Color #0 transparency in the window     | SOLID         | TRANSPARENT\nBit0  Background display                      | ON            | OFF");
+	makeDataDup("HWREGS", 0x41, 0x01, "_LCDSTAT", "Bit6    Interrupt on scanline coincidence     | ON            | OFF\nBit5    Interrupt on controller mode 10       | ON            | OFF\nBit4    Interrupt on controller mode 01       | ON            | OFF\nBit3    Interrupt on controller mode 00       | ON            | OFF\nBit2    Scanline coincidence flag             | COINCIDENCE   | NO COINCIDENCE\nBit1-0  LCD Controller mode:\n  00 - Horizontal blanking impulse [VRAM 8000-9FFF can be accessed by CPU]\n  01 - Vertical blanking impulse [VRAM 8000-9FFF can be accessed by CPU]\n  10 - OAM FE00-FE90 is accessed by LCD controller\n  11 - Both OAM FE00-FE90 and VRAM 8000-9FFF are accessed by LCD controller");
+	makeDataDup("HWREGS", 0x42, 0x01, "_SCROLLY", "");
+	makeDataDup("HWREGS", 0x43, 0x01, "_SCROLLX", "");
+	makeDataDup("HWREGS", 0x44, 0x01, "_CURLINE", "");
+	makeDataDup("HWREGS", 0x45, 0x01, "_CMPLINE", "");
+	makeDataDup("HWREGS", 0x46, 0x01, "_DMACONT", "");
+	makeDataDup("HWREGS", 0x47, 0x01, "_BGPAL", "");
+	makeDataDup("HWREGS", 0x48, 0x01, "_OBJ0PAL", "");
+	makeDataDup("HWREGS", 0x49, 0x01, "_OBJ1PAL", "");
+	makeDataDup("HWREGS", 0x4A, 0x01, "_WNDPOSY", "");
+	makeDataDup("HWREGS", 0x4B, 0x01, "_WNDPOSX", "");
+
+	makeDataDup("HWREGS", 0x4D, 0x14, "_GBC_SPEED", "");
+	makeDataDup("HWREGS", 0x4F, 0x14, "_GBC_VRAM_BANK", "");
+	makeDataDup("HWREGS", 0x51, 0x14, "_GBC_DMA_SRCH", "");
+	makeDataDup("HWREGS", 0x52, 0x14, "_GBC_DMA_SRCL", "");
+	makeDataDup("HWREGS", 0x53, 0x14, "_GBC_DMA_DSTH", "");
+	makeDataDup("HWREGS", 0x54, 0x14, "_GBC_DMA_DSTL", "");
+	makeDataDup("HWREGS", 0x55, 0x14, "_GBC_DMA_LEN", "");
+	makeDataDup("HWREGS", 0x53, 0x14, "_GBC_DMA_DSTH", "");
+	makeDataDup("HWREGS", 0x56, 0x14, "_GBC_IR_CTRL", "");
+	makeDataDup("HWREGS", 0x68, 0x14, "_GBC_BG_PAL_IDX", "");
+	makeDataDup("HWREGS", 0x69, 0x14, "_GBC_BG_PAL_VAL", "");
+	makeDataDup("HWREGS", 0x6A, 0x14, "_GBC_SPR_PAL_IDX", "");
+	makeDataDup("HWREGS", 0x6B, 0x14, "_GBC_SPR_PAL_VAL", "");
+	makeDataDup("HWREGS", 0x70, 0x01, "_GBC_WRAM_BANK", "");
+
+	makeDataDup("IENABLE", 0x0, 0x01, "_IENABLE", "Bit4  Transition High->Low on pins P10-P13    | ENABLED       | DISABLED\nBit3  End of serial I/O transfer              | ENABLED       | DISABLED\nBit2  Timer overflow                          | ENABLED       | DISABLED\nBit1  LCD controller interrupt [see LCDSTAT]  | ENABLED       | DISABLED\nBit0  LCD vertical blanking impulse           | ENABLED       | DISABLED");
+
 	makeVector(0x00,"");
 	makeVector(0x08,"");
 	makeVector(0x10,"");
@@ -1466,26 +1518,26 @@ static find_pads(str, h0, h1, hs, p0, ps) {
 		}
 		if(held0==held1) {
 			if(hs==1) {
-				makeDataDup("ZRAM",held0&0x7F,1,"_pad_held");
+				makeDataDup("ZRAM",held0&0x7F,1,"_pad_held","");
 			} else {
 				if(held0 >= 0xFF00)
-					makeDataDup("ZRAM",held0&0x7F,1,"_pad_held");
+					makeDataDup("ZRAM",held0&0x7F,1,"_pad_held","");
 				else if(held0 >= 0xD000)
-					makeDataDup("RAMB",held0&0xFFF,1,"_pad_held");
+					makeDataDup("RAMB",held0&0xFFF,1,"_pad_held","");
 				else
-					makeDataDup("RAM0",held0&0xFFF,1,"_pad_held");
+					makeDataDup("RAM0",held0&0xFFF,1,"_pad_held","");
 			}
 			if(ps==1){
 				pres0 = Byte(ea+p0)|0xFF00;
-				makeDataDup("ZRAM",pres0&0x7F,1,"_pad_press");
+				makeDataDup("ZRAM",pres0&0x7F,1,"_pad_press","");
 			} else {
 				pres0 = Word(ea+p0);
 				if(pres0 >= 0xFF00)
-					makeDataDup("ZRAM",pres0&0x7F,1,"_pad_press");
+					makeDataDup("ZRAM",pres0&0x7F,1,"_pad_press","");
 				else if(pres0 >= 0xD000)
-					makeDataDup("RAMB",pres0&0xFFF,1,"_pad_press");
+					makeDataDup("RAMB",pres0&0xFFF,1,"_pad_press","");
 				else
-					makeDataDup("RAM0",pres0&0xFFF,1,"_pad_press");
+					makeDataDup("RAM0",pres0&0xFFF,1,"_pad_press","");
 			}
 			Message("pad vars %04X, %04X detected at 0x%08x\n", held0, pres0, ea);
 		}
@@ -1519,18 +1571,18 @@ static find_mmc_prg(str,w0o,w1o,name) {
 //		Message("detected %04x %04x %04x %04x\n",w0,w1,bmc0,bmc1);
 		if((w0>=bmc0)&&(w0<bmc1)) {
 			if(w1<0xD000)
-				makeDataDup("RAM0",w1&0xFFF,1,"_prg_bank");
+				makeDataDup("RAM0",w1&0xFFF,1,"_cur_prg_bank","");
 			else
-				makeDataDup("RAMB",w1&0xFFF,1,"_prg_bank");
+				makeDataDup("RAMB",w1&0xFFF,1,"_cur_prg_bank","");
 //			Message("mmc prg bank setup detected at 0x%08x (%04x)\n",ea,w1);
 			MakeNameAuto(ea,name);
 			det++;
 			ret=ea;
 		} else if((w1>=bmc0)&&(w1<bmc1)) {
 			if(w0<0xD000)
-				makeDataDup("RAM0",w0&0xFFF,1,"_prg_bank");
+				makeDataDup("RAM0",w0&0xFFF,1,"_cur_prg_bank","");
 			else
-				makeDataDup("RAMB",w0&0xFFF,1,"_prg_bank");
+				makeDataDup("RAMB",w0&0xFFF,1,"_cur_prg_bank","");
 //			Message("mmc prg bank setup detected at 0x%08x (%04x)\n",ea,w0);
 			MakeNameAuto(ea,name);
 			det++;
@@ -1548,14 +1600,11 @@ static find_mmc_prg(str,w0o,w1o,name) {
 
 static find_table_jumps(str,wo,cnt) {
 	auto ea=-1;
+	auto bank = GetReg(ea,"ds");
+	auto base = MK_FP(AskSelector(bank), 0);
 	while((ea=FindBinary(ea+1, SEARCH_DOWN, str))!=BADADDR) {
-		auto ww = Word(ea+wo);
-		auto base = MK_FP(AskSelector(GetSegmentAttr(ea, SEGATTR_SEL)), 0);
-#ifdef MMC_DEFAULT_BANK
-		ptr_table_far(base + ww,MMC_DEFAULT_BANK,1);
-#else
-		ptr_table_far(base + ww,-1,1);
-#endif
+		auto ww = Word(ea + wo);
+		ptr_table_far(base + ww, bank, 1);
 		cnt++;
 	}
 	return cnt;
@@ -1699,7 +1748,6 @@ static ptr_table_far(ea, farbank, docode) {
 	auto i = 0, w0, stop = 0;
 	auto base, eabank = GetSegmentAttr(ea, SEGATTR_SEL);
 	do {
-		stop = isRef(GetFlags(ea + i)) | isRef(GetFlags(ea + i + 1));
 		if(((i&1)==0)&&(!stop)){
 			MakeUnknown(ea+i, 2, DOUNK_SIMPLE);
 			MakeWord(ea+i);
@@ -1721,5 +1769,6 @@ static ptr_table_far(ea, farbank, docode) {
 			Wait();
 		}
 		i = i + 2;
+		stop = isRef(GetFlags(ea + i)) | isRef(GetFlags(ea + i + 1));
 	} while (!stop && (i < 0x10000));
 }

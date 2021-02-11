@@ -294,15 +294,16 @@ static auto_far_ptr_ex(ea,mode,arg) {
 		Jump(ea+size);
 	// --
 	} else if(mode == 5) {
-		auto loofs = 2;
-		auto hiofs = 1;
+		auto loofs = 1;
+		auto hiofs = 0;
+		auto bbank = 2;
 		size = 3;
 		MakeUnknown(ea, size, DOUNK_SIMPLE);
 		MakeByte(ea);
 		MakeByte(ea+1);
 		MakeByte(ea+2);
 		auto addr = Byte(ea+loofs)|(Byte(ea+hiofs)<<8);
-		base = MK_FP(AskSelector(Byte(ea)), 0);
+		base = MK_FP(AskSelector(Byte(ea+bbank)), 0);
 		OpOffEx(ea + loofs, 0, REF_LOW8, base + addr, base, 0);
 		OpOffEx(ea + hiofs, 0, REF_HIGH8, base + addr, base, 0);
 		Wait();
@@ -338,51 +339,39 @@ static auto_far_ptr_ex(ea,mode,arg) {
 			AddCodeXref(ea, ofs0, fl_CF);
 		}
 	} else if(mode == 3) {
-		bofs = 0;
-		wofs = 2;
-		size = 4;
-		MakeUnknown(ea, size, DOUNK_SIMPLE);
-		MakeWord(ea + wofs);
-		MakeWord(ea + bofs);
 
-		if(Word(ea + wofs)!=0) {
-			far_ptr(ea, bofs, wofs, 0, 0);
-
-			auto bb = Byte(ea + bofs);
-			auto ww = Word(ea + wofs);
-			base = MK_FP(AskSelector(bb), 0);
-			auto ptr = base + ww;
-			auto cc;
-
-			while ((cc=Byte(ptr))!=0) {
-				tmp1 = Word(ptr+1);
-				MakeUnknown(ptr, 3, DOUNK_SIMPLE);
-				MakeByte(ptr);
-				MakeWord(ptr+1);
-				OpOffEx(ptr+1, 0, REF_OFF16, -1, base, 0);
-				Message(" %d sub at 0x%08x\n", cc, base + tmp1);
-				MakeCode(base + tmp1);
-				AutoMark(base + tmp1, AU_CODE);
-				Wait();
-				ptr=ptr+3;
-			}
+		while (Byte(ea) != 0) {
+			MakeUnknown(ea, 7, DOUNK_SIMPLE);
+			MakeByte(ea + 0);
+			MakeByte(ea + 1);
+			MakeWord(ea + 2);
+			far_ptr(ea, 1, 2, 0, 0);
+			make_data_array(ea + 4, 3, "");
+			ea = ea + 7;
 		}
-
-		Jump(ea + size);
+		MakeUnknown(ea, 1, DOUNK_SIMPLE);
+		MakeByte(ea + 0);
+		ea = ea + 1;
+		Jump(ea);
 	} else if(mode == 2) {
 	// custom far resources	bank/ofs/dst/size
-		size = 10;
-		MakeUnknown(ea, size, DOUNK_SIMPLE);
-		MakeByte(ea + 0);
-		MakeByte(ea + 1);
+
+		MakeUnknown(ea, 11, DOUNK_SIMPLE);
+
+		MakeWord(ea + 0);
 		MakeWord(ea + 2);
-		far_ptr(ea, 1, 2, 0, 0);
 		MakeWord(ea + 4);
-		MakeWord(ea + 6);
-		far_ptr(ea, 1, 6, 0, 0);
-		MakeWord(ea + 8);
-		Wait();
-		Jump(ea + size);
+		MakeByte(ea + 6);
+		MakeWord(ea + 7);
+		MakeWord(ea + 9);
+
+		far_ptr(ea, 6, 0, 0, 0);
+		far_ptr(ea, 6, 2, 0, 0);
+		far_ptr(ea, 6, 4, 0, 0);
+		far_ptr(ea, 6, 7, 0, 0);
+		far_ptr(ea, 6, 9, 0, 0);
+
+		Jump(ea + 11);
 	// --
 	} else if(mode == 1) {
 	// custom far resources	bank/ofs/dst/size
@@ -404,32 +393,37 @@ static auto_far_ptr_ex(ea,mode,arg) {
 		Jump(ea);
 	// --
 	} else {
-///* simple far link
-		bofs = 0;
-		wofs = 1;
-		size = 3;
-		MakeUnknown(ea, size, DOUNK_SIMPLE);
-		MakeByte(ea + bofs);
-		MakeWord(ea + wofs);
-//		MakeWord(ea + wofs + 2);
-//		MakeWord(ea + wofs + 4);
-//		MakeWord(ea + wofs + 6);
-//		MakeWord(ea + wofs + 2);
-		far_ptr(ea, bofs, wofs, 0, 0);
-//		far_ptr(ea, bofs, wofs + 2, 0, 0);
-//		far_ptr(ea, bofs, wofs + 4, 0, 0);
-//		far_ptr(ea, bofs, wofs + 6, 0, 0);
-//		far_ptr(ea, bofs, wofs + 2, 0, 0);
-//		make_data_array(ea + bofs, 2, "");
-//		auto v0 = Byte(ea + bofs) & 0x3F;
-//		if((v0 & 0x3F) == 0)
-//			base = MK_FP(AskSelector(0x3D + 1), 0);
-//		else
-//			base = MK_FP(AskSelector(v0 + 1), 0);
-//		if(Word(ea + wofs) >=0xE000)
-//			base = MK_FP(AskSelector(0x3F + 1), 0);
-//		OpOffEx(ea + wofs, 0, REF_OFF16, -1, base, 0);
-		Jump(ea + size);
+//		cnt1 = Byte(ea);
+//		MakeUnknown(ea, 1, DOUNK_SIMPLE);
+//		MakeByte(ea);
+//		ea = ea + 1;
+//		for(i=0; i<cnt1; i++) {
+
+		ea = -1;
+		auto pat = "E5 21 FF 7F EA 50 21 BE 20 FA E1", instr = "MMC_PRG_SET";
+		while((ea=FindBinary(ea + 1, SEARCH_DOWN, pat))!=BADADDR) {
+//			Message("found pattern at 0x%08x\n", ea);
+			make_data_array(ea, ((strlen(pat) + 1) / 3), "");
+			SetManualInsn(ea, instr);
+		}
+
+/*
+		bofs = 1;
+		wofs = 2;
+		size = 4;
+		MakeUnknown(ea, 4, DOUNK_SIMPLE);
+		MakeByte(ea + 0);
+		far_ptr(ea + 1, 0, 1, 0, 0);
+		ea = ea + 4;
+		base = MK_FP(AskSelector(bank0), 0);
+		while(Word(ea) != 0xFFFF) {
+			MakeUnknown(ea, 2, DOUNK_SIMPLE);
+			OpOffEx(ea, 0, REF_OFF16, -1, base, 0);
+			ea = ea + 2;
+		}
+		MakeUnknown(ea, 2, DOUNK_SIMPLE);
+		MakeWord(ea);
+		Jump(ea + 2);
 //*/
 /*
 		bofs = 0;
@@ -709,8 +703,8 @@ static make_16bit_near_tbl(ea, ofs) {
 		if(curea < maxea) maxea = curea;
 		MakeUnknown(ea + size + 3, 3, DOUNK_SIMPLE);
 		MakeWord(ea + size + 3);
-//		OpOffEx(ea + size + 3, 0, REF_OFF16, curea - ofs, base, ofs);
-		OpOffEx(ea + size + 3, 0, REF_OFF16, -1, base, ofs);
+		OpOffEx(ea + size + 3, 0, REF_OFF16, curea - ofs, base, ofs);
+//		OpOffEx(ea + size + 3, 0, REF_OFF16, -1, base, ofs);
 		MakeUnknown(curea - ofs, 3, DOUNK_SIMPLE);
 		MakeCode(curea - ofs);
 		AutoMark(curea - ofs, AU_CODE);
@@ -726,10 +720,42 @@ static make_16bit_near_tbl(ea, ofs) {
 
 static make_8bit_ofs(ea, loofs, hiofs, ofs) {
 	auto base = BADADDR, addr = Byte(ea + loofs + 1) | (Byte(ea + hiofs + 1) << 8);
-	if(addr >= 0x8000)
-		base = MK_FP(AskSelector(GetSegmentAttr(ea, SEGATTR_SEL)), 0);
-	else if((addr >= 0x5000)||(addr < 0x800))
-		base = MK_FP(AskSelector(GetSegmentAttr(addr, SEGATTR_SEL)), 0);
+	auto seg = GetReg(ea,"ds");
+	auto segorg = getSegOrg(seg);
+	auto segsize = getSegSize(seg);
+//	Message("ea = 0x%08x, seg = %1x, segorg = %04x, segsize = %04x addr = %04x\n", ea, seg, segorg, segsize, addr);
+	if(segsize == 0x2000) {// 8k seg size, 16 banks
+		if(addr < 0x8000) {
+			base = MK_FP(AskSelector(0), 0);
+//			Message(" 0000-7FFF base = %08x!\n", base);
+		} else if(segorg == (addr & 0xE000)) {
+			base = MK_FP(AskSelector(seg), 0);
+//			Message(" %04x-%04x base = %08x!\n",segorg, segsize-1, base);
+		} else if((addr & 0xE000) == 0xC000) {
+			base = MK_FP(AskSelector(14+1), 0);
+//			Message(" C000-DFFF base = %08x!\n", base);
+		} else if((addr & 0xE000) == 0xE000) {
+			base = MK_FP(AskSelector(15+1), 0);
+//			Message(" E000-FFFF base = %08x!\n", base);
+		} else {
+			base = MK_FP(AskSelector(AskLong(0, "Enter Bank Nunber") + 1), 0);
+//			Message(" custom base = %08x!\n", base);
+		}
+	} else if(segsize == 0x4000) {// 16k seg size, 7 banks
+		if(addr < 0x8000)
+			base = MK_FP(AskSelector(0), 0);
+		else if(segorg == (addr & 0xC000))
+			base = MK_FP(AskSelector(seg), 0);
+		else if((addr & 0xE000) == 0xC000)
+			base = MK_FP(AskSelector(7+1), 0);
+		else
+			base = MK_FP(AskSelector(AskLong(0, "Enter Bank Nunber") + 1), 0);
+	} else if(segsize == 0x8000) {// 32k seg size
+		if(addr < 0x8000)
+			base = MK_FP(AskSelector(0), 0);
+		else
+			base = MK_FP(AskSelector(seg), 0);
+	}
 	if(base != BADADDR) {
 		OpOffEx(ea + loofs, 0, REF_LOW8, base + addr - ofs, base, ofs);
 		OpOffEx(ea + hiofs, 0, REF_HIGH8, base + addr - ofs, base, ofs);
@@ -1044,14 +1070,26 @@ static make_8bit_ofs_gb_common(ea,loofs,hiofs) {
 	auto base, addr = Byte(ea + loofs + 1) | (Byte(ea + hiofs + 1) << 8);
 	if(addr < 0x4000)
 		base = MK_FP(AskSelector(GetSegmentAttr(0, SEGATTR_SEL)), 0);
-	else if((addr>=0xC000)&&(addr<0xD000))
+	else if((addr >=0x8000) && (addr < 0x9800))
+		base = MK_FP(AskSelector(SegByName("CHRRAM")),0);
+	else if((addr >=0x9800) && (addr < 0x9C00))
+		base = MK_FP(AskSelector(SegByName("BGMAP1")),0);
+	else if((addr >=0x9C00) && (addr < 0xA000))
+		base = MK_FP(AskSelector(SegByName("BGMAP2")),0);
+	else if((addr >=0xA000) && (addr < 0xC000))
+		base = MK_FP(AskSelector(SegByName("CRAM")),0);
+	else if((addr >=0xC000) && (addr < 0xD000))
 		base = MK_FP(AskSelector(SegByName("RAM0")),0);
-	else if((addr>=0xD000)&&(addr<0xE000))
+	else if((addr >=0xD000) && (addr < 0xE000))
 		base = MK_FP(AskSelector(SegByName("RAMB")),0);
-	else if((addr>=0xFF80)&&(addr<=0xFFFF))
-		base = MK_FP(AskSelector(SegByName("ZRAM")),0);
-	else if((addr>=0xFF00)&&(addr<=0xFF7F))
+	else if((addr >=0xFE00) && (addr < 0xFEA0))
+		base = MK_FP(AskSelector(SegByName("OAM")),0);
+	else if((addr >=0xFF00) && (addr < 0xFF80))
 		base = MK_FP(AskSelector(SegByName("HWREGS")),0);
+	else if((addr >=0xFF80) && (addr < 0xFFFF))
+		base = MK_FP(AskSelector(SegByName("ZRAM")),0);
+	else if(addr ==0xFFFF)
+		base = MK_FP(AskSelector(SegByName("IENABLE")),0);
 	else {
 		if(ea < 0x4000) {
 			base = MK_FP(AskSelector(AskLong(0, "Enter Bank Nunber")), 0);
@@ -1119,7 +1157,7 @@ static make_8bit_ofs_gb_auto() {
 }
 
 static find_near_tbls() {
-	auto b0, b1, base, loaddr, hiaddr, ea, screa = ScreenEA();
+	auto b0, b1, base, loaddr, hiaddr, ea, screa = 0;
 
 	// DO SWITCHES JMP ($XX) TYPE
 	// LDA $XXXX/+1,X/Y
@@ -1172,11 +1210,10 @@ static find_near_tbls() {
 	// PHA
 	// LDA $XXXX,X/Y
 	// PHA
-	// RET
+	// RTS
 	ea = screa;
 	do {
-//		ea = FindBinary(ea + 1, SEARCH_DOWN | SEARCH_CASE, "?? ?? ?? 48 ?? ?? ?? 48 60");
-		ea = FindBinary(ea + 1, SEARCH_DOWN | SEARCH_CASE, "?? ?? ?? 48 ?? ?? ?? ?? ?? 48 60");
+		ea = FindBinary(ea + 1, SEARCH_DOWN | SEARCH_CASE, "?? ?? ?? 48 ?? ?? ?? 48 60");
 		if(ea != BADADDR) {
 			b0 = Byte(ea + 0);
 			b1 = Byte(ea + 4);
@@ -1459,6 +1496,8 @@ static auto_rename_ptrs() {
 	auto bank = GetReg(sea,"ds");
 	auto extbank = -1, extbase = -1;
 	auto base = MK_FP(AskSelector(bank), 0);
+//	auto segorg = getSegOrg(bank);
+	auto segsize = getSegSize(bank);
 	auto name_mask = AskStr("", "Enter Name Mask");
 	auto i = 0;
 	while(sea < eea) {
@@ -1483,8 +1522,7 @@ static auto_rename_ptrs() {
 				}
 			}
 		} else {
-			auto rom_mode = 0;
-			if(rom_mode == 0) {				// NES mode (16x8k)
+			if(segsize == 0x2000) {				// NES mode (16x8k)
 				if(bank<16){
 					if(ofs<0xC000) {
 						MakeNameEx(base+ofs,nname,SN_CHECK|SN_NOWARN);
@@ -1506,7 +1544,25 @@ static auto_rename_ptrs() {
 						MakeNameEx(MK_FP(AskSelector(16), 0)+ofs,nname,SN_CHECK|SN_NOWARN);
 					}
 				}
-			} else if(rom_mode == 1) {				// NES mode (32k banks)
+			} else if(segsize == 0x4000) {				// NES mode (8x16k banks)
+				if(bank<8){
+					if(ofs<0xC000) {
+						MakeNameEx(base+ofs,nname,SN_CHECK|SN_NOWARN);
+					} else {
+						MakeNameEx(MK_FP(AskSelector(8),0)+ofs,nname,SN_CHECK|SN_NOWARN);
+					}
+				} else {
+					if(ofs<0xC000) {
+						if(extbank==-1) {
+							extbank = AskLong(1, "Enter External Bank");
+							extbase = MK_FP(AskSelector(extbank+1), 0);
+						}
+						MakeNameEx(extbase+ofs,nname,SN_CHECK|SN_NOWARN);
+					} else {
+						MakeNameEx(MK_FP(AskSelector(8),0)+ofs,nname,SN_CHECK|SN_NOWARN);
+					}
+				}
+			} else if(segsize == 0x8000) {				// NES mode (32k banks)
 				MakeNameEx(base+ofs,nname,SN_CHECK|SN_NOWARN);
 			}
 		}
@@ -1531,16 +1587,19 @@ static garbage_search(loc) {
 
 static garbage_collector(void) {
 	Message("garbage collector start\n");
+
 	garbage_search("loc_.*:");
 	garbage_search("unk_.*:");
 	garbage_search("byte_.*:");
 	garbage_search("word_.*:");
 	garbage_search("off_.*:");
-
 	garbage_search("_jloc.*:");
 	garbage_search("_j_prg.*:");
 	garbage_search("_j_j_.*:");
 	garbage_search("_jsub.*:");
+	garbage_search("_far.*:");
+	garbage_search("_mmc.*:");
+	garbage_search("_msg.*:");
 
 	Message("garbage collector done\n");
 }

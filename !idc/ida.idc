@@ -121,7 +121,7 @@ static main(void)
 
 	AddHotkey("Shift-E", "make_8bit_ofs_selection2");		// 8-bit single ptr 2 byte gap, current cursor
 	AddHotkey("Shift-D", "make_8bit_far_ofs_selection2");	// --//-- far manual bank request
-	AddHotkey("Shift-C", "make_8bit_far_ofs_selection2_i");	// --//-- hi/lo inverse order
+	AddHotkey("Shift-C", "make_8bit_ofs_selection2_i");	// --//-- hi/lo inverse order
 
 	AddHotkey("Shift-R", "make_8bit_ofs_selection3");		// --//-- 3 byte gap
 //	AddHotkey("Shift-F", "make_8bit_ofs_selection3_i");		// --//-- hi/lo inverse order

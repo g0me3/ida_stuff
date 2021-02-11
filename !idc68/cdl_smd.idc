@@ -2,7 +2,10 @@
 #include <idc.idc>
 #include <functions.idc>
 
-#define DEBUG
+//#define DEBUG
+//#define MARK_UNUSED
+//#define MARK_NEW
+//#define MAKE_MORE_OFFSETS
 
 static code_patterns(void) {
 	auto cnt;
@@ -28,6 +31,7 @@ static main(void) {
 		cdlFileName = AskFile(0,"*.cdl","Choose a CDL-file Manually");
 		cdlFile = fopen(cdlFileName, "rb");
 	}
+
 	if (cdlFile != 0) {
 		auto cdlSignature = "", cdlType = "", cdlFiles=0;
 		fgetc(cdlFile);														// skip 0D
@@ -76,30 +80,77 @@ static main(void) {
 //  DataZ80 = 0x20
 //  DMASource = 0x40 --
 
-				if(cdlFileOpened == 1)
-					cd = fgetc(cdlFile);
-				else
-					cd = 0;
-//				MakeComm(segeai, "");
-				auto cmt = "";
+			if(cdlFileOpened == 1)
+				cd = fgetc(cdlFile);
+			else
+				cd = 0;
 
-				if(cd & 1) {
-					cmt = cmt + "*c";
+			auto cmt;
+
+#ifdef MARK_NEW
+			if(CommentEx(segeai,0)=="")
+				cmt = "new ";
+			else
+				cmt = "";
+#else
+			cmt = "";
+#endif
+
+			if(cd & 1) {
+				cmt = cmt + "*c";
+				if(cd & 4)
+					cmt = cmt + "(d)";
+				if(!isCode(GetFlags(segeai)))
 					MakeCode(segeai);
-					codelog++;
-//					i = i + ItemSize(segeai) - 1;
-				}
-				if(cd & 4) {
-					cmt = cmt + "*d";
-					datalog++;
-				}
-				if(cd & 0x40) {
-					cmt = cmt + "*dma";
-					datalog++;
-				} else {
-					unusedlog++;
-				}
+				codelog++;
+				auto add = ItemSize(segeai) - 1;
+				i = i + add;
+				fseek(cdlFile, add, 1);
 				MakeComm(segeai, cmt);
+			} else if(cd & 4) {
+				cmt = cmt + "*d";
+				MakeComm(segeai, cmt);
+				datalog++;
+			} else if(cd & 18) {
+				cmt = cmt + "*zc";
+				MakeComm(segeai, cmt);
+				datalog++;
+			} else if(cd & 0x20) {
+				cmt = cmt + "*zd";
+				MakeComm(segeai, cmt);
+				datalog++;
+			} else if(cd & 0x40) {
+				cmt = cmt + "*dma";
+				MakeComm(segeai, cmt);
+				datalog++;
+			} else {
+#ifdef MARK_UNUSED
+				MakeComm(segeai, "*-");
+#endif
+				unusedlog++;
+			}
+
+#ifdef MAKE_MORE_OFFSETS
+			if(isCode(GetFlags(segeai))) {
+				auto opc = Word(segeai);
+				if(    (opc == 0x33FC)||
+				       (opc == 0x3A3C)||
+				       (opc == 0x3B7C)||
+				       (opc == 0x2A3C)||
+				       (opc == 0x41F9)||
+				       (opc == 0x2C3C)||
+				       (opc == 0x49F9)||
+				       (opc == 0x3E3C)||
+				       (opc == 0x3CFC)||
+				       (opc == 0x207C)||
+				       (opc == 0x23FC) ) {
+#ifdef DEBUG
+					Message("   offs at 0x%08x to 0x%08x\n", segeai, Dword(segeai + 2));
+#endif
+					OpOff(segeai,0,0);
+				}
+			}
+#endif
 			i++;
 		} while (i < segsize);
 	}

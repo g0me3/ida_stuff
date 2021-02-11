@@ -21,17 +21,33 @@ static main(void)
 	DelHotkey("Shift-A");
 	AddHotkey("Shift-A", "auto_far_ofs16i_snes");
 
+	DelHotkey("Shift-3");
+	AddHotkey("Shift-3", "make_8bit_ofs_selection3");
+	DelHotkey("Shift-4");
+	AddHotkey("Shift-4", "make_8bit_ofs_selection4");
+	DelHotkey("Shift-5");
+	AddHotkey("Shift-5", "make_8bit_ofs_selection5");
+	DelHotkey("Shift-6");
+	AddHotkey("Shift-6", "make_8bit_ofs_selection6");
+	DelHotkey("Shift-7");
+	AddHotkey("Shift-7", "make_8bit_ofs_selection7");
+
 	DelHotkey("Shift-Z");
 	AddHotkey("Shift-Z", "auto_array");						// auto convert unexplored area to byte array, auto search of next area from cursor
 	DelHotkey("Shift-X");
 	AddHotkey("Shift-X", "auto_tbl16_snes");
 	DelHotkey("Shift-C");
-	AddHotkey("Shift-C", "auto_custom_array_snes");
+	AddHotkey("Shift-C", "auto_custom_array");
 	DelHotkey("Shift-V");
 	AddHotkey("Shift-V", "auto_far_ofs16_snes");
+	DelHotkey("Shift-B");
+	AddHotkey("Shift-B", "auto_tbl32_gen");
+
+	DelHotkey("Shift-1");
+	AddHotkey("Shift-1", "auto_snes_registers");
 
 	DelHotkey("Shift-9");
-	AddHotkey("Shift-9", "auto_rename_snes");
+	AddHotkey("Shift-9", "auto_rename");
 
 	DelHotkey("Shift-0");
 	AddHotkey("Shift-0", "garbage_collector");

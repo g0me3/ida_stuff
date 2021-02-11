@@ -23,11 +23,11 @@
 //      otherwise return 0
 //
 int idaapi accept_file(linput_t *li, char fileformatname[MAX_FILE_FORMAT_NAME], int n) {
-	unsigned short sign;
+	unsigned long sign;
 	if(n) return(0);
-	qlseek(li, 0x100, SEEK_SET);
+	qlseek(li, 0x104, SEEK_SET);
 	if(qlread(li, &sign, sizeof(sign)) != sizeof(sign)) return(0);
-	if ((sign == 0xC300) || (sign == 0xC3F3)) {
+	if (sign == 0x6666EDCE) {
 		qstrncpy(fileformatname, "Game Boy / Game Boy Color ROM file", MAX_FILE_FORMAT_NAME);
 		return(1);
 	} else

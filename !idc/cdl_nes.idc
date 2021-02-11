@@ -2,8 +2,8 @@
 #include <idc.idc>
 #include <functions.idc>
 
-#define DO_DATA_OFFSET
-#define DO_CODE_OFFSETS
+//#define DO_DATA_OFFSET
+//#define DO_CODE_OFFSETS
 //#define DO_DATA
 #define DO_CODE
 #define DO_ALT_MESSAGES
@@ -131,9 +131,9 @@ static main(void) {
 
 		Message("SEG analyze is over\n");
 
+		auto codelog = 0, datalog = 0, pcmlog = 0, unusedlog = 0;
 		do {
 			auto segea, segea_orig, segsize, segorg, segorgmask;
-			auto codelog = 0, datalog = 0, pcmlog = 0, unusedlog = 0;
 			auto i = 0, segeai, optype, opvalue, opsize = 0, lastop = 0, lastopaddr = 0, lastopaddrbit = 0, ofst, byteread = 0, firstoffset = 0xffff;
 
 			if(secondpass == 0) {
