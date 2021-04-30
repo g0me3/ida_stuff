@@ -3,8 +3,9 @@
 #include <functions.idc>
 
 #define DEBUG
-#define SHOW_UPDATES
-#define DATA_CODE_REGS_FROM_CDL
+#define SHOW_CORRUPT
+//#define SHOW_UPDATES
+//#define DATA_CODE_REGS_FROM_CDL
 
 static fread_str(handle, start, size) {
 	auto i, ret = "";
@@ -131,7 +132,7 @@ static main(void) {
 
 #ifdef SHOW_UPDATES
 				auto tmpcmt = CommentEx(segeai,0);
-				if((tmpcmt[0]=="-") || (strstr(tmpcmt,"unk") != -1)) {
+				if((tmpcmt[0]=="-") || (strstr(tmpcmt,"   -") != -1)) {
 					MakeComm(segeai, "");
 					update = "new ";
 				}
@@ -170,7 +171,11 @@ static main(void) {
 						SetReg(segeai, "B", B);
 						SetReg(segeai, "DS", B << 12);
 					}
-
+#ifdef SHOW_CORRUPT
+					if(cd & 6) {
+						update = form("corrupt %02X ",cd & 6);
+					}
+#endif
 #ifdef DEBUG
 					D = GetReg(segeai, "D");
 					B = GetReg(segeai, "B");
@@ -180,25 +185,38 @@ static main(void) {
 					MakeComm(segeai, form("%sopc",update));
 #endif
 					MakeCode(segeai);
+
+					i = i + (ItemSize(segeai) - 1);
+
 					codelog++;
 				} else if(cd & 4) {
+#ifdef SHOW_CORRUPT
+					if(cd & 3) {
+						update = "corrupt ";
+					}
+#endif
 					MakeComm(segeai, form("%sdat",update));
 					datalog++;
 				} else if(cd & 8) {
 					MakeComm(segeai, form("%sdma",update));
 					datalog++;
 				} else {
+#ifdef SHOW_CORRUPT
+					if(cd & 2) {
+						update = "corrupt ";
+					}
+#endif
 #ifdef DEBUG
 					if(isCode(GetFlags(segeai))) {
 						D = GetReg(segeai, "D");
 						B = GetReg(segeai, "B");
 						x = GetReg(segeai, "i");
 						m = GetReg(segeai, "m");
-						MakeComm(segeai, form("unk-.D%04X.B%02X.I%s.A%s",D,B,x?"8 ":"16", m?"8 ":"16"));
+						MakeComm(segeai, form("%s  -*.D%04X.B%02X.I%s.A%s",update,D,B,x?"8 ":"16", m?"8 ":"16"));
 					} else
-						MakeComm(segeai, "-");
+						MakeComm(segeai, form("%s-*",update));
 #else
-					MakeComm(segeai, "-");
+					MakeComm(segeai, form("%s-*",update));
 #endif
 					unusedlog++;
 				}

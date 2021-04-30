@@ -261,13 +261,13 @@ static main(void) {
 //	parametric_farcall("CD A7 05", 3,    0x3F,      5,     3,     0,     0, 1);
 //	parametric_farcall("CD 62 21", 3,    0x3F,      5,     3,     0,     0, 1);
 
-//	parametric_fixsize("20 70 D7", 2);
-//	parametric_fixsize("20 76 D7", 2);
-//	parametric_fixsize("20 7C D7", 2);
-//	parametric_fixsize("CD 28 1B", 1);
+//	parametric_fixsize("20 83 CC", 2);
+//	parametric_fixsize("20 7F CC", 2);
+//	parametric_fixsize("20 95 CC", 2);
+//	parametric_fixsize("20 38 C0", 2);
 //	parametric_fixsize("CD 12 46", 10);
 
-//	parametric_switch("20 13 CB");
+//	parametric_switch("20 E1 C2");
 
 //	parametric_fixsize("20 C6 B0", 5);
 //	parametric_fixsize("20 73 DD", 2);

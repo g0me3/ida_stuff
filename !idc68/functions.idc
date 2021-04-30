@@ -117,17 +117,26 @@ static auto_far_ofs16_snes() {
 
 ///*
 	auto ea = ScreenEA();
+	auto size = 2;
 	make_far_ofs16_snes(ea, 0, 2, 3, "");
-	MakeUnknown(ea + 2, 2, DOUNK_SIMPLE);
-	MakeWord(ea + 2);
-	Jump(ea + 4); //*/
+	make_data_array(ea + 2, size, "");
+	Jump(ea + size + 2);//*/
+
+/*
+	auto ea = ScreenEA();
+	auto size = 10;
+	make_data_array(ea, 6, "");
+	make_far_ofs16_snes(ea + 6, 0, 2, 3, "");
+	make_data_array(ea + 8, 2, "");
+	Jump(ea + size);//*/
 
 /*	auto ea = ScreenEA();
 	MakeUnknown(ea, 2, DOUNK_SIMPLE);
 	MakeWord(ea);
 	ea = ea + 2;
 	ea = make_far_ofs16_snes(ea, 0, 2, 3, "");
-	Jump(ea + 2); */
+	Jump(ea + 2); //*/
+
 }
 
 static make_ofs32_name(ea, name) {
@@ -135,7 +144,7 @@ static make_ofs32_name(ea, name) {
 	MakeUnknown(ea, 4, DOUNK_SIMPLE);
 	MakeDword(ea);
 	if((tmp0 > 0) && (tmp0 < segsize)) {
-		OpOffEx(ea, 0, REF_OFF32, -1, 0, 0);
+		OpOffEx(ea, 0, REF_OFF32, -1, 0x948000, 0);
 		if(name)
 			MakeNameEx(tmp0, form("%s_%08x",name,tmp0), SN_CHECK|SN_NOWARN);
 		Wait();
@@ -227,16 +236,18 @@ static custom_mvn_copy(ea) {
 }
 
 static custom_far_args(ea) {
-//	auto bofs = 1;
-//	auto wofs = 3;
-	auto bofs = 4;
+	auto bofs = 8;
 	auto wofs = 0;
-	MakeUnknown(ea, 10, DOUNK_SIMPLE);
-	auto base = (0x80|Byte(ea + bofs)) << 16;
-	MakeCode(ea);
-	AutoMark(ea, AU_CODE);
-	Wait();
-	OpOffEx(ea + wofs, 0, REF_OFF16, -1, base, 0);
+//	MakeUnknown(ea, 12, DOUNK_SIMPLE);
+	auto byte = Byte(ea + bofs);
+	auto word = Word(ea + wofs + 1);
+	if((byte >= 0x80) && (word >= 0x8000)) {
+		auto base = (0x80|byte) << 16;
+		MakeCode(ea);
+		AutoMark(ea, AU_CODE);
+		Wait();
+		OpOffEx(ea + wofs, 0, REF_OFF16, -1, base, 0);
+	}
 }
 
 static custom_params_scw3_far_param4(ea) {
@@ -273,10 +284,13 @@ static far_sys_call_search_customA(pat, instr) {
 }
 
 static auto_custom_array() {
-	auto ea = ScreenEA(), ofs, tmp0, tmp1, tmp2, stop = 0, str, size, i;
+	auto ea = ScreenEA(), ofs, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmpstr = "", stop = 0, str, size, i;
 //	parametric_fixsize("A9 ?? ?? A2 ?? 00 22 ?? ?? ??", -1, "", custom_far_args);
 //	parametric_fixsize("A9 ?? ?? A0 ?? 00 22 ?? ?? ??", -1, "", custom_far_args);
 //	parametric_fixsize("A2 ?? ?? A0 ?? ?? A9 ?? ?? 54 ?? ??", -1, "", custom_mvn_copy);
+
+//	parametric_fixsize("A9 ?? ?? 85 ?? A2 ?? ?? 22 9C FA 82", -1, "", custom_far_args);
+//	parametric_fixsize("A9 ?? ?? 8F ?? ?? ?? A9 ?? 00 8F ?? ?? ??", -1, "", custom_far_args);
 
 //	parametric_fixsize("18 69 ?? ?? A8 A9 ?? 00", -1, "", custom_far_args);
 
@@ -422,32 +436,6 @@ static auto_custom_array() {
 		ea = ea + tmp0;
 	}*/
 
-/*
-	tmp0 = ea;
-//	Message("Start ea = 0x%08X\n",ea);
-	while((tmp1 = Byte(tmp0)) != 0x00) {
-//		Message(" search start 0x%08X\n",tmp0);
-		while ((tmp1 != 0x0D) && (tmp1 != 0x00)) {
-			tmp0 = tmp0 + 1;
-			tmp1 = Byte(tmp0);
-		}
-		if(tmp1 != 0x00) {
-//			Message(" search stop 0x%08X\n",tmp0);
-			MakeStr(ea, tmp0 + 1);
-			MakeName(ea, "");
-			ea = tmp0 + 1;
-			tmp0 = ea;
-		} else {
-			MakeStr(ea, tmp0);
-			MakeName(ea, "");
-			MakeByte(tmp0);
-			Jump(tmp0 + 1);
-		}
-	}
-	if(tmp1 == 0x00)
-		Jump(tmp0 + 1);
-*/
-
 //	MakeUnknown(ea, 128, DOUNK_SIMPLE);
 //	MakeData(ea, FF_BYTE, 128, 0);
 //	SetArrayFormat(ea, AP_IDXHEX, 128, 0);
@@ -507,13 +495,60 @@ static auto_custom_array() {
 
 //	far_sys_call_search_customA("A9 ?? ?? A2 ?? ?? 22 97 DD 80", "CSYS    %s");
 
-	MakeUnknown(ea, 8, DOUNK_SIMPLE);
-	MakeByte(ea);
-	make_far_ofs16_snes(ea + 1, 0, 2, 3, "");
-	MakeByte(ea+4);
-	make_far_ofs16_snes(ea + 5, 0, 2, 3, "");
+//	MakeUnknown(ea, 8, DOUNK_SIMPLE);
+//	MakeByte(ea);
+//	make_far_ofs16_snes(ea + 1, 0, 2, 3, "");
+//	MakeByte(ea+4);
+//	make_far_ofs16_snes(ea + 5, 0, 2, 3, "");
 //	make_data_array(ea + 4, 4, "");
-	Jump(ea + 8);
+//	Jump(ea + 8);
+
+///*
+	while(Word(ea) != 0xFFFF) {
+//		Message("block start 0x%06X\n",ea);
+		MakeUnknown(ea, 2, DOUNK_SIMPLE);
+		MakeWord(ea);
+		OpOffEx(ea, 0, REF_OFF16|REFINFO_NOBASE, -1, 0x828010, 0);
+		ea = ea + 2;
+//		if(!isRef(GetFlags(ea)))
+//			MakeName(ea, form("_unref_obj_res%06X",ea));
+		while((tmp0 = Word(ea)) != 0xFFFF) {
+//			Message(" chunk at0x%06X\n",ea);
+			MakeUnknown(ea, 4, DOUNK_SIMPLE);
+			if((tmp0 == 0x02)||(tmp0 == 0x08)||(tmp0 == 0x4C))
+				MakeStructEx(ea, -1, "_tobj_o81");
+			else
+				MakeStructEx(ea, -1, "_tobj_val");
+			ea = ea + 4;
+		}
+		MakeUnknown(ea, 2, DOUNK_SIMPLE);
+		MakeWord(ea);
+		ea = ea + 2;
+//		Jump(ea);
+	}
+	MakeUnknown(ea, 2, DOUNK_SIMPLE);
+	MakeWord(ea);
+//*/
+} // SHIFT-C
+
+static make_string(ea) {
+	auto tmp0 = ea, tmp1;
+	while((tmp1 = Byte(tmp0)) != 0x00) {
+		while ((tmp1 != 0x0D) && (tmp1 != 0x00)) {
+			tmp0 = tmp0 + 1;
+			tmp1 = Byte(tmp0);
+		}
+		if(tmp1 == 0x0D) {
+			MakeStr(ea, tmp0 + 1);
+			MakeName(ea, "");
+			ea = tmp0 + 1;
+			tmp0 = ea;
+		} else {
+			MakeStr(ea, tmp0 + 1);
+			MakeName(ea, "");
+		}
+	}
+	return tmp0 + 1;
 }
 
 static far_sys_call_search_custom(pat, b_lo, b_hi, bank, instr) {
@@ -554,8 +589,33 @@ static make_tbl16_snes(ea, docode) {
 	} while (!stop && (i < 0x10000));
 }
 
-static auto_tbl16_snes() {
-	make_tbl16_snes(ScreenEA(),0);
+static make_tbl16_gen(ea, docode) {
+	auto base = ea;
+	auto i = 0, w0, stop = 0;
+	do {
+		if((i&1)==0){
+			MakeUnknown(ea + i, 2, DOUNK_SIMPLE);
+			MakeWord(ea + i);
+			w0 = Word(ea + i);
+			OpOffEx(ea + i, 0, REF_OFF32|REFINFO_NOBASE, -1, base + i, 0);
+			if(docode) {
+				MakeCode(base + w0);
+				AutoMark(base + w0, AU_CODE);
+				Wait();
+			}
+			Wait();
+		}
+		i++;
+		stop=(isRef(GetFlags(ea + i)));
+	} while (!stop && (i < 0x10000));
+}
+
+static auto_tbl16() {
+	if(SegByName("Z80")!=BADADDR) {	// GEN 16-bit tbl
+		make_tbl16_gen(ScreenEA(),0);
+	} else {
+		make_tbl16_snes(ScreenEA(),0);
+	}
 }
 
 static make_tbl32_gen(ea, docode) {
@@ -713,13 +773,13 @@ static garbage_collector(void) {
 	garbage_search("word_.*:");
 	garbage_search("off_.*:");
 	garbage_search("a.*:");
-	garbage_search("_jloc.*:");
-	garbage_search("_j_prg.*:");
-	garbage_search("_j_j_.*:");
-	garbage_search("_jsub.*:");
-	garbage_search("_far.*:");
-	garbage_search("_mmc.*:");
-	garbage_search("_msg.*:");
+//	garbage_search("_jloc.*:");
+//	garbage_search("_j_prg.*:");
+//	garbage_search("_j_j_.*:");
+//	garbage_search("_jsub.*:");
+//	garbage_search("_far.*:");
+//	garbage_search("_mmc.*:");
+//	garbage_search("_msg.*:");
 
 	Message("garbage collector done\n");
 }

@@ -35,7 +35,7 @@ static main(void)
 	DelHotkey("Shift-Z");
 	AddHotkey("Shift-Z", "auto_array");						// auto convert unexplored area to byte array, auto search of next area from cursor
 	DelHotkey("Shift-X");
-	AddHotkey("Shift-X", "auto_tbl16_snes");
+	AddHotkey("Shift-X", "auto_tbl16");
 	DelHotkey("Shift-C");
 	AddHotkey("Shift-C", "auto_custom_array");
 	DelHotkey("Shift-V");

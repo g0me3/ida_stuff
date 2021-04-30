@@ -2,8 +2,8 @@
 #include <idc.idc>
 #include <functions.idc>
 
-//#define DO_DATA_OFFSET
-//#define DO_CODE_OFFSETS
+#define DO_DATA_OFFSET
+#define DO_CODE_OFFSETS
 //#define DO_DATA
 #define DO_CODE
 #define DO_ALT_MESSAGES

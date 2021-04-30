@@ -711,10 +711,10 @@ static make_16bit_near_tbl(ea, ofs) {
 		size = size + 2;
 	} while (ea + size + 3 < (maxea - ofs));
 	Wait();
-	MakeCode(ea + size + 3);
-	AutoMark(ea + size + 3, AU_CODE);
-	MakeCode(maxea - ofs);
-	AutoMark(maxea - ofs, AU_CODE);
+//	MakeCode(ea + size + 3);
+//	AutoMark(ea + size + 3, AU_CODE);
+//	MakeCode(maxea - ofs);
+//	AutoMark(maxea - ofs, AU_CODE);
 	Wait();
 }
 

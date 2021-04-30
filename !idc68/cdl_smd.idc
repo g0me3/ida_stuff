@@ -4,7 +4,7 @@
 
 //#define DEBUG
 //#define MARK_UNUSED
-//#define MARK_NEW
+#define MARK_NEW
 //#define MAKE_MORE_OFFSETS
 
 static code_patterns(void) {
@@ -85,15 +85,11 @@ static main(void) {
 			else
 				cd = 0;
 
-			auto cmt;
+			auto cmt = "";
 
 #ifdef MARK_NEW
 			if(CommentEx(segeai,0)=="")
 				cmt = "new ";
-			else
-				cmt = "";
-#else
-			cmt = "";
 #endif
 
 			if(cd & 1) {
@@ -106,24 +102,30 @@ static main(void) {
 				auto add = ItemSize(segeai) - 1;
 				i = i + add;
 				fseek(cdlFile, add, 1);
+				MakeComm(segeai, "");
 				MakeComm(segeai, cmt);
 			} else if(cd & 4) {
 				cmt = cmt + "*d";
+				MakeComm(segeai, "");
 				MakeComm(segeai, cmt);
 				datalog++;
 			} else if(cd & 18) {
 				cmt = cmt + "*zc";
+				MakeComm(segeai, "");
 				MakeComm(segeai, cmt);
 				datalog++;
 			} else if(cd & 0x20) {
 				cmt = cmt + "*zd";
+				MakeComm(segeai, "");
 				MakeComm(segeai, cmt);
 				datalog++;
 			} else if(cd & 0x40) {
 				cmt = cmt + "*dma";
+				MakeComm(segeai, "");
 				MakeComm(segeai, cmt);
 				datalog++;
 			} else {
+				MakeComm(segeai, "");
 #ifdef MARK_UNUSED
 				MakeComm(segeai, "*-");
 #endif
@@ -133,7 +135,9 @@ static main(void) {
 #ifdef MAKE_MORE_OFFSETS
 			if(isCode(GetFlags(segeai))) {
 				auto opc = Word(segeai);
-				if(    (opc == 0x33FC)||
+				auto ofs = Word(segeai + 2);
+				if(    (ofs > 0x2000) &&
+					  ((opc == 0x33FC)||
 				       (opc == 0x3A3C)||
 				       (opc == 0x3B7C)||
 				       (opc == 0x2A3C)||
@@ -143,7 +147,7 @@ static main(void) {
 				       (opc == 0x3E3C)||
 				       (opc == 0x3CFC)||
 				       (opc == 0x207C)||
-				       (opc == 0x23FC) ) {
+				       (opc == 0x23FC)) ) {
 #ifdef DEBUG
 					Message("   offs at 0x%08x to 0x%08x\n", segeai, Dword(segeai + 2));
 #endif
