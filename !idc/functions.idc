@@ -2,11 +2,19 @@
 // SCRIPT PARSE HELPERS
 // -------------------
 
-static make_auto_ofs16_gb(ea) {
+static make_auto_ofs16_gb(ea, bofs) {
 	auto word0, bank0, base;
+	MakeUnknown(ea, 2, DOUNK_SIMPLE);
 	MakeWord(ea);
 	word0 = Word(ea);
-	bank0 = GetReg(ea,"ds");
+	if(bofs == 0)
+		bank0 = GetReg(ea,"ds");
+	else {
+		if((bofs > 0) && (bofs & 0x100))
+			bank0 = bofs & 0xFF;
+		else
+			bank0 = Byte(ea + bofs);
+	}
 	if(bank0>0) {
 		if(word0<0x4000)
 			base = MK_FP(AskSelector(0), 0);
@@ -47,7 +55,7 @@ static auto_far_ptr() {
 }
 
 static auto_far_ptr_ex(ea,mode,arg) {
-	auto bofs, wofs, base, size, cnt, cnt0, cnt1, tmp1;
+	auto bofs, wofs, base, size, cnt, cnt0, cnt1, tmp1, tmp0;
 	auto bank0 = GetReg(ea,"ds");
 
 //	Message("far ptr at 0x%08x, mode %d, arg %d\n",ea,mode,arg);
@@ -399,13 +407,13 @@ static auto_far_ptr_ex(ea,mode,arg) {
 //		ea = ea + 1;
 //		for(i=0; i<cnt1; i++) {
 
-		ea = -1;
-		auto pat = "E5 21 FF 7F EA 50 21 BE 20 FA E1", instr = "MMC_PRG_SET";
-		while((ea=FindBinary(ea + 1, SEARCH_DOWN, pat))!=BADADDR) {
+//		ea = -1;
+//		auto pat = "E5 21 FF 7F EA 50 21 BE 20 FA E1", instr = "MMC_PRG_SET";
+//		while((ea=FindBinary(ea + 1, SEARCH_DOWN, pat))!=BADADDR) {
 //			Message("found pattern at 0x%08x\n", ea);
-			make_data_array(ea, ((strlen(pat) + 1) / 3), "");
-			SetManualInsn(ea, instr);
-		}
+//			make_data_array(ea, ((strlen(pat) + 1) / 3), "");
+//			SetManualInsn(ea, instr);
+//		}
 
 /*
 		bofs = 1;
@@ -472,16 +480,21 @@ static auto_far_ptr_ex(ea,mode,arg) {
 		ea = make_auto_ofs16_gb(ea);
 		Jump(ea);
 //*/
+
 	// --
 	}
 }
 
 static make_data_array(ea, len, cmt) {
 	MakeUnknown(ea, len, DOUNK_SIMPLE);
-	MakeData(ea, FF_BYTE, len, 0);
-	SetArrayFormat(ea, AP_IDXHEX, len, 0);
-	MakeComm(ea, "");
-	MakeComm(ea, cmt);
+	if(len == 2) {
+		MakeWord(ea);
+	} else {
+		MakeData(ea, FF_BYTE, len, 0);
+		SetArrayFormat(ea, AP_IDXHEX, len, 0);
+	}
+//	MakeComm(ea, "");
+//	MakeComm(ea, cmt);
 	return ea + len;
 }
 
@@ -1499,10 +1512,12 @@ static auto_rename_ptrs() {
 //	auto segorg = getSegOrg(bank);
 	auto segsize = getSegSize(bank);
 	auto name_mask = AskStr("", "Enter Name Mask");
-	auto i = 0;
+	auto index_start = AskLong("", "Enter Start Index");
+	auto index_increment = AskLong("", "Enter Index Increment");
+	auto i = index_start;
 	while(sea < eea) {
 		auto ofs = Word(sea);
-		auto nname = form("%s%02X",name_mask,i);
+		auto nname = form(name_mask,i);
 		if(SegByName(form("ROM%X",0))!=BADADDR) {	// GB mode
 			if(bank>0){
 				if(ofs<0x4000) {
@@ -1567,7 +1582,8 @@ static auto_rename_ptrs() {
 			}
 		}
 		sea=sea+2;
-		i++;
+		i = i + index_increment;
+		Wait();
 	}
 }
 

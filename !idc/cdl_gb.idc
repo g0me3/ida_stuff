@@ -17,14 +17,14 @@
 //#define CLEAR_UNUSED
 #define MMC_PRG_SET_DETECT
 #define MMC_PRG_PROC_DETECT
-//#define SWITCH_DETECT_A
-//#define SWITCH_DETECT_B
+#define SWITCH_DETECT_A
+#define SWITCH_DETECT_B
 //#define MMC_DEFAULT_BANK 1
 
 // ========MMC control values========
 #define PRG_CMD_SIZE 10
 
-//#define MMC_SET_OFS0 0x0507
+#define MMC_SET_OFS0 0x021E
 //#define MMC_SET_OFS1 0x9DF
 //#define MMC_RESTORE_OFS 0x051F
 
@@ -74,13 +74,29 @@
 //#define CUSTOM_TABLE_JUMP_OFS3 1
 
 // ====manual farcall parameters=====
-//#define FARCALL_OPC 0xC7
-//#define FARCALL_BOFS 3
-//#define FARCALL_WOFS 1
-//#define FARCALL_SIZE 3
-//#define FARCALL_PARAM
-//#define FARCALL_EXEC
-//#define FARCALL_SYS
+#define FARCALL_OPCA 0xEF
+#define FARCALL_BOFSA 3
+#define FARCALL_WOFSA 1
+#define FARCALL_SIZEA 3
+#define FARCALL_PARAMA
+#define FARCALL_EXECA
+//#define FARCALL_SYSA
+
+#define FARCALL_OPCB 0xE7
+#define FARCALL_BOFSB 5
+#define FARCALL_WOFSB 1
+#define FARCALL_SIZEB 5
+#define FARCALL_PARAMB
+//#define FARCALL_EXECB
+//#define FARCALL_SYSB
+
+#define FARCALL_OPCC 0xCF
+#define FARCALL_BOFSC 1
+#define FARCALL_WOFSC 1
+#define FARCALL_SIZEC 1
+#define FARCALL_PARAMC
+//#define FARCALL_EXECC
+#define FARCALL_SYSC
 
 //#define FARCALL_OFS0 0x3991
 //#define FARCALL_BOFS0 3
@@ -192,8 +208,8 @@
 //#define CUSTOM_PATTERN1_ARG0 -1
 
 // ========parametric patterns=======
-//#define PARAMETRIC_OPC0 0xD7
-//#define PARAMETRIC_SIZE0 2
+#define PARAMETRIC_OPC0 0xDF
+#define PARAMETRIC_SIZE0 1
 //#define PARAMETRIC_OPC1 0xEF
 //#define PARAMETRIC_SIZE1 1
 //#define PARAMETRIC_OPC2 0xE7
@@ -964,55 +980,142 @@ static main(void) {
 							//   01 11 21 31            EA FA                  E0 F0                  RST
 							if(((opcode&0xCF)==0x01)||((opcode&0xEF)==0xEA)||((opcode&0xEF)==0xE0)||((opcode&0xC7)==0xC7)||(opcode==0x08)){
 								opvalue = GetOperandValue(segeai,j);
-#ifdef FARCALL_OPC
-								if(opcode==FARCALL_OPC) {
+
+#ifdef FARCALL_OPCA
+								if(opcode==FARCALL_OPCA) {
 									farcall_cnt++;
-	#ifdef FARCALL_PARAM
-/* CUSTOM FARCALL
-									MakeUnknown(segeai+1, 5, DOUNK_SIMPLE);
-									MakeWord(segeai+FARCALL_WOFS);
-									MakeWord(segeai+FARCALL_WOFS+2);
-									far_ptr_code(segeai, FARCALL_BOFS, FARCALL_WOFS, 0, 0);
-									MakeByte(segeai+FARCALL_BOFS);
-									make_code(segeai+6);
-									Wait();
-//*/
-//* REGULAR FARCALL
-		#ifdef FARCALL_SYS
+	#ifdef FARCALL_PARAMA
+		#ifdef FARCALL_SYSA
 									MakeUnknown(segeai+1, 2, DOUNK_SIMPLE);
 									MakeWord(segeai+1);
-									auto ass0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFS)), 0);
-									ass0 = ass0 + Word(ass0 + (Byte(segeai + FARCALL_WOFS) << 1) + 0x4000);
+									auto ass0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFSA)), 0);
+									ass0 = ass0 + Word(ass0 + (Byte(segeai + FARCALL_WOFSA) << 1) + 0x4000);
 									SetManualInsn(segeai, form("FJSR    %s", Name(ass0)));
 									if(Byte(segeai + 3)==0xC9)
 										MakeNameAuto(segeai, form("_j%s", Name(ass0)));
 									SetManualInsn(segeai+1, "ENDM");
 									AddCodeXref(segeai, ass0, fl_CF|XREF_USER);
-//									make_code(ass0);
 		#else
-									MakeUnknown(segeai+1, FARCALL_SIZE, DOUNK_SIMPLE);
-									MakeWord(segeai+FARCALL_WOFS);
-			#ifdef FARCALL_EXEC
-									far_ptr_code(segeai, FARCALL_BOFS, FARCALL_WOFS, 0, 0);
+									MakeUnknown(segeai+1, FARCALL_SIZEA, DOUNK_SIMPLE);
+									MakeWord(segeai+FARCALL_WOFSA);
+			#ifdef FARCALL_EXECA
+									far_ptr_code(segeai, FARCALL_BOFSA, FARCALL_WOFSA, 0, 0);
 			#else
-									far_ptr(segeai, FARCALL_BOFS, FARCALL_WOFS, 0, 0);
+									far_ptr(segeai, FARCALL_BOFSA, FARCALL_WOFSA, 0, 0);
 			#endif
-									MakeByte(segeai+FARCALL_BOFS);
+									MakeByte(segeai+FARCALL_BOFSA);
 		#endif
-									make_code(segeai+1+FARCALL_SIZE);
+									make_code(segeai+1+FARCALL_SIZEA);
 									Wait();
-//*/
 	#else
-		#ifdef FARCALL_SYS
-									auto ass0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFS)), 0);
-									ass0 = ass0 + Word(ass0 + (Byte(segeai + FARCALL_WOFS) << 1) + 0x4001);
+		#ifdef FARCALL_SYSA
+									auto ass0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFSA)), 0);
+									ass0 = ass0 + Word(ass0 + (Byte(segeai + FARCALL_WOFSA) << 1) + 0x4001);
 									SetManualInsn(segeai, form("FJSR    %s", Name(ass0)));
 									OpNumber(segeai - 3, 1);
-//									MakeNameAuto(segeai, form("_j%s", Name(ass0)));
 									AddCodeXref(segeai, ass0, fl_CF|XREF_USER);
-//									make_code(ass0);
 		#else
-									far_ptr_code(segeai, FARCALL_BOFS, FARCALL_WOFS, 1, -1);
+									far_ptr_code(segeai, FARCALL_BOFSA, FARCALL_WOFSA, 1, -1);
+		#endif
+	#endif
+								}
+#endif
+
+#ifdef FARCALL_OPCB
+								if(opcode==FARCALL_OPCB) {
+									farcall_cnt++;
+	#ifdef FARCALL_PARAMB
+		#ifdef FARCALL_SYSB
+									MakeUnknown(segeai+1, 2, DOUNK_SIMPLE);
+									MakeWord(segeai+1);
+									auto ass0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFSB)), 0);
+									ass0 = ass0 + Word(ass0 + (Byte(segeai + FARCALL_WOFSB) << 1) + 0x4000);
+									SetManualInsn(segeai, form("FJSR    %s", Name(ass0)));
+									if(Byte(segeai + 3)==0xC9)
+										MakeNameAuto(segeai, form("_j%s", Name(ass0)));
+									SetManualInsn(segeai+1, "ENDM");
+									AddCodeXref(segeai, ass0, fl_CF|XREF_USER);
+		#else
+									MakeUnknown(segeai+1, FARCALL_SIZEB, DOUNK_SIMPLE);
+									MakeWord(segeai+FARCALL_WOFSB);
+			#ifdef FARCALL_EXECB
+									far_ptr_code(segeai, FARCALL_BOFSB, FARCALL_WOFSB, 0, 0);
+			#else
+									far_ptr(segeai, FARCALL_BOFSB, FARCALL_WOFSB, 0, 0);
+			#endif
+									MakeByte(segeai+FARCALL_BOFSB);
+		#endif
+									make_code(segeai+1+FARCALL_SIZEB);
+									Wait();
+	#else
+		#ifdef FARCALL_SYSB
+									auto ass0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFSB)), 0);
+									ass0 = ass0 + Word(ass0 + (Byte(segeai + FARCALL_WOFSB) << 1) + 0x4001);
+									SetManualInsn(segeai, form("FJSR    %s", Name(ass0)));
+									OpNumber(segeai - 3, 1);
+									AddCodeXref(segeai, ass0, fl_CF|XREF_USER);
+		#else
+									far_ptr_code(segeai, FARCALL_BOFSB, FARCALL_WOFSB, 1, -1);
+		#endif
+	#endif
+								}
+#endif
+
+#ifdef FARCALL_OPCC
+								if(opcode==FARCALL_OPCC) {
+									farcall_cnt++;
+	#ifdef FARCALL_PARAMC
+		#ifdef FARCALL_SYSC
+///*
+									MakeUnknown(segeai+1, 1, DOUNK_SIMPLE);
+									MakeByte(segeai+1);
+									auto ass0 = Byte(segeai + 1);
+									if(ass0 < 0x4B) {
+										ass0 = Word(0x1E0 + (ass0 << 1));
+										if(ass0 >= 0x4000)
+											ass0 = ass0 + MK_FP(AskSelector(0x1E), 0);
+									} else {
+										if(ass0 & 0x80)
+											ass0 = MK_FP(AskSelector(0x1F), 0) + Word(MK_FP(AskSelector(0x1F), 0) + 0x4000 + ((ass0 & 0x7F) << 1));
+										else
+											ass0 = MK_FP(AskSelector(0x1E), 0) + Word(MK_FP(AskSelector(0x1E), 0) + 0x4000 + (ass0 << 1));
+									}
+									SetManualInsn(segeai, form("SYS    %s", Name(ass0)));
+									SetManualInsn(segeai+1, "ENDM");
+									AddCodeXref(segeai, ass0, fl_CF|XREF_USER);
+//*/
+/*
+									MakeUnknown(segeai+1, 2, DOUNK_SIMPLE);
+									MakeWord(segeai+1);
+									ass0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFSC)), 0);
+									ass0 = ass0 + Word(ass0 + (Byte(segeai + FARCALL_WOFSC) << 1) + 0x4000);
+									SetManualInsn(segeai, form("FJSR    %s", Name(ass0)));
+									if(Byte(segeai + 3)==0xC9)
+										MakeNameAuto(segeai, form("_j%s", Name(ass0)));
+									SetManualInsn(segeai+1, "ENDM");
+									AddCodeXref(segeai, ass0, fl_CF|XREF_USER);
+//*/
+		#else
+									MakeUnknown(segeai+1, FARCALL_SIZEC, DOUNK_SIMPLE);
+									MakeWord(segeai+FARCALL_WOFSC);
+			#ifdef FARCALL_EXECC
+									far_ptr_code(segeai, FARCALL_BOFSC, FARCALL_WOFSC, 0, 0);
+			#else
+									far_ptr(segeai, FARCALL_BOFSC, FARCALL_WOFSC, 0, 0);
+			#endif
+									MakeByte(segeai+FARCALL_BOFSC);
+		#endif
+									make_code(segeai+1+FARCALL_SIZEC);
+									Wait();
+	#else
+		#ifdef FARCALL_SYSC
+									auto ass0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFSC)), 0);
+									ass0 = ass0 + Word(ass0 + (Byte(segeai + FARCALL_WOFSC) << 1) + 0x4001);
+									SetManualInsn(segeai, form("FJSR    %s", Name(ass0)));
+									OpNumber(segeai - 3, 1);
+									AddCodeXref(segeai, ass0, fl_CF|XREF_USER);
+		#else
+									far_ptr_code(segeai, FARCALL_BOFSC, FARCALL_WOFSC, 1, -1);
 		#endif
 	#endif
 								}
