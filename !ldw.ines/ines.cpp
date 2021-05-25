@@ -19,6 +19,12 @@
 static ines_hdr _hdr;
 static ines_vect _vect;
 
+static unsigned char fds_block_idx;
+static fds_disk_hdr fds_disk;
+static fds_file_amount fds_files;
+static fds_file_header fds_file;
+static unsigned char *fds_data;
+
 //--------------------------------------------------------------------------
 //
 //      check input file format. if recognized, then return 1
@@ -31,6 +37,9 @@ int idaapi accept_file(linput_t *li, char fileformatname[MAX_FILE_FORMAT_NAME], 
 	if(qlread(li, &_hdr, sizeof(_hdr)) != sizeof(_hdr)) return(0);
 	if(_hdr.signature == 0x1A53454E) {
 		qstrncpy(fileformatname, "Famicom/NES emulator iNES ROM file", MAX_FILE_FORMAT_NAME);
+		return(1);
+	} else if(_hdr.signature == 0x1A534446) {
+		qstrncpy(fileformatname, "Famicom/NES emulator FDS image file", MAX_FILE_FORMAT_NAME);
 		return(1);
 	} else
 		return(0);
@@ -120,6 +129,14 @@ void cdl_free() {
 	}
 }
 
+unsigned char char_trim(unsigned char c) {
+	if ((c > 0) && ((c < 0x30) || ((c > 0x39) && (c < 0x41)) || ((c > 0x5A) && (c < 0x61)) || (c > 0x7A)))
+		return '_';
+	else
+		return c;
+}
+
+
 //--------------------------------------------------------------------------
 //
 //      load file into the database.
@@ -128,192 +145,279 @@ void idaapi load_file(linput_t *li, ushort /*neflag*/, const char * /*fileformat
 {
 	unsigned int curea, ofs, size, i;
 	unsigned int mapper, _prg;
+	char nam[9], files_count = 0;
 	sel_t sel = 1;
 
 	qlseek(li, 0, SEEK_SET);
 	if(qlread(li, &_hdr, sizeof(_hdr)) != sizeof(_hdr)) loader_failure();
 
 	set_processor_type("M6502", SETPROC_ALL|SETPROC_FATAL);
-	if(!add_segm(0, 0x0000, 0x8000, "RAM", CLASS_CODE)) loader_failure();
 
-	mapper = ((_hdr.map_byte0&0xF0)>>4)|(_hdr.map_byte1&0xF0);
-	_prg = _hdr.prg_banks;
-	if(_prg == 0)
-		_prg = 256;
+	if(_hdr.signature == 0x1A534446) { // FDS
 
-	cdl_load();
-	create_filename_cmt();
-	add_pgm_cmt("Mapper      : %d", mapper);
-	add_pgm_cmt("16k Banks   : %d", _prg);
+		create_filename_cmt();
+		set_selector(0, 0);
+		if(!add_segm(0, 0x0000, 0x6000, "RAM", CLASS_CODE)) loader_failure();
+		if(!add_segm(0, 0x6000, 0xE000, "MAIN", CLASS_CODE)) loader_failure();
+		if(!add_segm(0, 0xE000, 0x10000, "BIOS", CLASS_CODE)) loader_failure();
 
-	curea = 0;
-	if(_prg == 1) {
-		size = 0x4000;
-		set_selector(sel, curea >> 4);
-		curea = cdl_get_bank_org(0, size, 0xC000);
-		if(!add_segm(sel, curea, curea + size, "ROM", CLASS_CODE)) loader_failure();
-		file2base(li, qltell(li), curea, curea + size, FILEREG_PATCHABLE);
-	} else if (_prg == 2) {
-		size = 0x8000;
-		set_selector(sel, curea >> 4);
-		curea = 0x8000;
-		if(!add_segm(sel, curea, curea + size, "ROM", CLASS_CODE)) loader_failure();
-		file2base(li, qltell(li), curea, curea + size, FILEREG_PATCHABLE);
-	} else {
-		switch(mapper) {
-		case 1:
-		case 2:
-		case 10:
-		case 16:
-		case 68:
-		case 71:
-		case 153:
-		case 156:
-		case 157:
-		case 159: 
-		case 182: {
+		curea = 0x10000;
+		sel = 3;
+
+		while( qlread(li, &fds_block_idx, sizeof(fds_block_idx)) == sizeof(fds_block_idx) ) {
+			switch(fds_block_idx) {
+			case 0: {
+					if(files_count < fds_files.amount)
+						loader_failure("disc error at %08X", qltell(li));
+					if(qltell(li) < (65500 + 16))
+						qlseek(li, (65500 + 16), SEEK_SET);
+					else if(qltell(li) < ((65500 * 2) + 16))
+						qlseek(li, ((65500 * 2) + 16), SEEK_SET);
+					else if(qltell(li) < ((65500 * 3) + 16))
+						qlseek(li, ((65500 * 3) + 16), SEEK_SET);
+					break;
+					}
+			case 1: {
+					if(qlread(li, &fds_disk, sizeof(fds_disk_hdr)) != sizeof(fds_disk_hdr)) loader_failure("1");
+					nam[0] = fds_disk.name[0];
+					nam[1] = fds_disk.name[1];
+					nam[2] = fds_disk.name[2];
+					nam[3] = fds_disk.name[3];
+					nam[4] = 0;
+					add_pgm_cmt("Disc  %d  Side: %d Name \"%-04s\" Boot %02X Manu %02X", fds_disk.disk_num, fds_disk.side_num, nam, fds_disk.boot_read, fds_disk.manufacturer);
+					break;
+					}
+			case 2: {
+					if(qlread(li, &fds_files, sizeof(fds_file_amount)) != sizeof(fds_file_amount)) loader_failure("2");
+					add_pgm_cmt("Files %02X", fds_files.amount);
+					break;
+					}
+			case 3: {
+					if(qlread(li, &fds_file, sizeof(fds_file_header)) != sizeof(fds_file_header)) loader_failure("3");
+					nam[0] = fds_file.name[0];
+					nam[1] = fds_file.name[1];
+					nam[2] = fds_file.name[2];
+					nam[3] = fds_file.name[3];
+					nam[4] = fds_file.name[4];
+					nam[5] = fds_file.name[5];
+					nam[6] = fds_file.name[6];
+					nam[7] = fds_file.name[7];
+					nam[8] = 0;
+					add_pgm_cmt("      %02X %02X \"%-08s\" addr %04X size %04X [%s]", fds_file.num, fds_file.code, nam, fds_file.addr, fds_file.size,(fds_file.type==0)?"PROG":((fds_file.type==1)?"CHAR":"NT"));
+					files_count++;
+					break;
+					}
+			case 4: {
+					if(fds_file.type == 0) {
+						if((fds_file.code > 0) && (fds_file.code <= fds_disk.boot_read)) {
+							file2base(li, qltell(li), fds_file.addr, fds_file.addr + fds_file.size, FILEREG_PATCHABLE);
+						} else {
+							set_selector(sel, curea >> 4);
+							nam[0] = char_trim(fds_file.name[0]);
+							nam[1] = char_trim(fds_file.name[1]);
+							nam[2] = char_trim(fds_file.name[2]);
+							nam[3] = char_trim(fds_file.name[3]);
+							nam[4] = char_trim(fds_file.name[4]);
+							nam[5] = char_trim(fds_file.name[5]);
+							nam[6] = char_trim(fds_file.name[6]);
+							nam[7] = char_trim(fds_file.name[7]);
+							nam[8] = 0;
+							if(!add_segm(sel, curea + fds_file.addr, curea + fds_file.addr + fds_file.size, nam, CLASS_CODE)) loader_failure();
+							file2base(li, qltell(li), curea + fds_file.addr, curea + fds_file.addr + fds_file.size, FILEREG_PATCHABLE);
+							curea += 0x10000;
+							sel++;
+						}
+					} else {
+						fds_data = (unsigned char*)malloc(fds_file.size);
+						if(qlread(li, (void*)fds_data, fds_file.size) != fds_file.size) loader_failure("4");
+						free(fds_data);
+					}
+					break;
+					}
+			default: {
+					loader_failure("file code error at %08X", qltell(li));
+					break;
+					}
+			}
+		}	
+
+		add_entry(1, toEA(0, get_16bit(0xDFF6)), "_FDS_NMI0", true);
+		add_entry(2, toEA(0, get_16bit(0xDFF8)), "_FDS_NMI1", true);
+		add_entry(3, toEA(0, get_16bit(0xDFFA)), "_FDS_NMI2", true);
+		add_entry(4, toEA(0, get_16bit(0xDFFC)), "_FDS_RESET", true);
+		add_entry(5, toEA(0, get_16bit(0xDFFE)), "_FDS_IRQ", true);
+
+	} else if(_hdr.signature == 0x1A53454E) { // NES
+
+		if(!add_segm(0, 0x0000, 0x8000, "RAM", CLASS_CODE)) loader_failure();
+
+		mapper = ((_hdr.map_byte0&0xF0)>>4)|(_hdr.map_byte1&0xF0);
+		_prg = _hdr.prg_banks;
+		if(_prg == 0)
+			_prg = 256;
+
+		cdl_load();
+		create_filename_cmt();
+		add_pgm_cmt("Mapper      : %d", mapper);
+		add_pgm_cmt("16k Banks   : %d", _prg);
+
+		curea = 0;
+		if(_prg == 1) {
 			size = 0x4000;
-			for(i=0; i<_prg-1; i++)
-			{
+			set_selector(sel, curea >> 4);
+			curea = cdl_get_bank_org(0, size, 0xC000);
+			if(!add_segm(sel, curea, curea + size, "ROM", CLASS_CODE)) loader_failure();
+			file2base(li, qltell(li), curea, curea + size, FILEREG_PATCHABLE);
+		} else if (_prg == 2) {
+			size = 0x8000;
+			set_selector(sel, curea >> 4);
+			curea = 0x8000;
+			if(!add_segm(sel, curea, curea + size, "ROM", CLASS_CODE)) loader_failure();
+			file2base(li, qltell(li), curea, curea + size, FILEREG_PATCHABLE);
+		} else {
+			switch(mapper) {
+			case 1:
+			case 2:
+			case 10:
+			case 16:
+			case 68:
+			case 71:
+			case 153:
+			case 156:
+			case 157:
+			case 159: 
+			case 182: {
+				size = 0x4000;
+				for(i=0; i<_prg-1; i++)
+				{
+					set_selector(sel, curea >> 4);
+					curea += cdl_get_bank_org(i, size, 0x8000);
+					load_bank(li, curea, size, sel);
+					sel++;
+					curea += 0x10000;
+				}
 				set_selector(sel, curea >> 4);
-				curea += cdl_get_bank_org(i, size, 0x8000);
+				curea += 0xC000;
+				load_bank(li, curea, size, sel);
+				break;
+			}
+			case 186: {
+				size = 0x4000;
+				set_selector(sel, curea >> 4);
+				curea = 0xC000;
 				load_bank(li, curea, size, sel);
 				sel++;
 				curea += 0x10000;
+				for (i = 0; i<_prg - 1; i++)
+				{
+					set_selector(sel, curea >> 4);
+					curea += 0x8000;
+					load_bank(li, curea, size, sel);
+					sel++;
+					curea += 0x10000;
+				}
+				break;
 			}
- 			set_selector(sel, curea >> 4);
-			curea += 0xC000;
-			load_bank(li, curea, size, sel);
-			break;
-		}
-		case 186: {
-			size = 0x4000;
-			set_selector(sel, curea >> 4);
-			curea = 0xC000;
-			load_bank(li, curea, size, sel);
-			sel++;
-			curea += 0x10000;
-			for (i = 0; i<_prg - 1; i++)
-			{
+			case 4:
+			case 5:
+			case 6:
+			case 9:
+			case 12:
+			case 14:
+			case 15:
+			case 23:
+			case 83:
+			case 121: {
+				_prg <<= 1;
+				ofs = 0x8000;
+				size = 0x2000;
+				for(i=0; i<_prg-2; i++)
+				{
+					set_selector(sel, curea >> 4);
+					curea += cdl_get_bank_org(i, size, ofs);
+					load_bank(li, curea, size, sel);
+					sel++;
+					curea += 0x10000;
+					ofs ^= 0x2000;
+				}
+				set_selector(sel, curea >> 4);
+				curea += cdl_get_bank_org(i, size, 0xC000);
+				load_bank(li, curea, size, sel);
+				sel++;
+				curea += 0x10000;
+				set_selector(sel, curea >> 4);
+				curea += 0xE000;
+				load_bank(li, curea, size, sel);
+				break;
+			}
+			case 42: {
+				_prg <<= 1;
+				size = 0x2000;
+				for(i=0; i<_prg-4; i++)
+				{
+					set_selector(sel, curea >> 4);
+					curea += 0x6000;
+					load_bank(li, curea, size, sel);
+					sel++;
+					curea += 0x10000;
+				}
+				size = 0x8000;
 				set_selector(sel, curea >> 4);
 				curea += 0x8000;
 				load_bank(li, curea, size, sel);
-				sel++;
-				curea += 0x10000;
+				break;
 			}
-			break;
-		}
-		case 4:
-		case 5:
-		case 6:
-		case 9:
-		case 12:
-		case 14:
-		case 15:
-		case 23:
-		case 83:
-		case 121: {
-			_prg <<= 1;
-			ofs = 0x8000;
-			size = 0x2000;
-			for(i=0; i<_prg-2; i++)
-			{
+			case 17:
+			case 18:
+			case 19:
+			case 80:
+			case 82:
+			default: {
+				_prg <<= 1;
+				size = 0x2000;
+				for(i=0; i<_prg-1; i++)
+				{
+					set_selector(sel, curea >> 4);
+					curea += cdl_get_bank_org(i, size, 0x8000);
+					load_bank(li, curea, size, sel);
+					sel++;
+					curea += 0x10000;
+				}
 				set_selector(sel, curea >> 4);
-				curea += cdl_get_bank_org(i, size, ofs);
+				curea += 0xE000;
 				load_bank(li, curea, size, sel);
-				sel++;
-				curea += 0x10000;
-				ofs ^= 0x2000;
+				break;
 			}
- 			set_selector(sel, curea >> 4);
-			curea += cdl_get_bank_org(i, size, 0xC000);
-			load_bank(li, curea, size, sel);
-			sel++;
-			curea += 0x10000;
- 			set_selector(sel, curea >> 4);
-			curea += 0xE000;
-			load_bank(li, curea, size, sel);
-			break;
-		}
-		case 42: {
-			_prg <<= 1;
-			size = 0x2000;
-			for(i=0; i<_prg-4; i++)
-			{
-				set_selector(sel, curea >> 4);
-				curea += 0x6000;
-				load_bank(li, curea, size, sel);
-				sel++;
-				curea += 0x10000;
+			case 7:
+			case 11:
+			case 13:
+			case 34:
+			case 216: {
+				_prg >>= 1;
+				ofs = 0x8000;
+				size = 0x8000;
+				for(i=0; i<_prg; i++)
+				{
+					set_selector(sel, curea >> 4);
+					curea += ofs;
+					load_bank(li, curea, size, sel);
+					sel++;
+					curea += 0x10000;
+				}
 			}
-			size = 0x8000;
- 			set_selector(sel, curea >> 4);
-			curea += 0x8000;
-			load_bank(li, curea, size, sel);
-			break;
-		}
-		case 17:
-		case 18:
-		case 19:
-		case 80:
-		case 82:
-		default: {
-			_prg <<= 1;
-			size = 0x2000;
-			for(i=0; i<_prg-1; i++)
-			{
-				set_selector(sel, curea >> 4);
-				curea += cdl_get_bank_org(i, size, 0x8000);
-				load_bank(li, curea, size, sel);
-				sel++;
-				curea += 0x10000;
-			}
- 			set_selector(sel, curea >> 4);
-			curea += 0xE000;
-			load_bank(li, curea, size, sel);
-			break;
-		}
-		case 7:
-		case 11:
-		case 13:
-		case 34:
-		case 216: {
-			_prg >>= 1;
-			ofs = 0x8000;
-			size = 0x8000;
-			for(i=0; i<_prg; i++)
-			{
-				set_selector(sel, curea >> 4);
-				curea += ofs;
-				load_bank(li, curea, size, sel);
-				sel++;
-				curea += 0x10000;
 			}
 		}
-/*
-		case 220: {
-			_prg <<= 2;
-			size = 0x1000;
-			for(i=0; i<_prg; i++)
-			{
-				set_selector(sel, curea >> 4);
-				curea += cdl_get_bank_org(i, size, 0x8000);
-				load_bank(li, curea, size, sel);
-				sel++;
-				curea += 0x10000;
-			}
-			break;
-		
-	*/
-		}
+
+		qlseek(li, (_hdr.prg_banks << 14) + sizeof(_hdr) - sizeof(_vect), SEEK_SET);
+		if(qlread(li, &_vect, sizeof(_vect)) != sizeof(_vect)) loader_failure();
+
+		add_entry(1, toEA(ask_selector(sel), _vect.nmi_vect), "NMI", true);
+		add_entry(2, toEA(ask_selector(sel), _vect.res_vect), "RESET", true);
+		add_entry(3, toEA(ask_selector(sel), _vect.irq_vect), "IRQ", true);
+	
+		cdl_free();
 	}
 
-	qlseek(li, (_hdr.prg_banks << 14) + sizeof(_hdr) - sizeof(_vect), SEEK_SET);
-	if(qlread(li, &_vect, sizeof(_vect)) != sizeof(_vect)) loader_failure();
-
-	add_pgm_cmt("NMI vector  : $%04X", _vect.nmi_vect);
-	add_pgm_cmt("RESET vector: $%04X", _vect.res_vect);
-	add_pgm_cmt("IRQ vector  : $%04X", _vect.irq_vect);
 
 	inf.af =
 	 AF_FIXUP     | //   0x0001          // Create offsets and segments using fixup info
@@ -328,14 +432,6 @@ void idaapi load_file(linput_t *li, ushort /*neflag*/, const char * /*fileformat
 	 AF_IMMOFF    | //   0x2000          // Convert 32bit instruction operand to offset
 	 AF_DREFOFF   ; //   0x4000          // Create offset if data xref to seg32 exists
 	inf.af2 = 0;
-
-//  set_default_dataseg(0);
-
-	add_entry(1, toEA(ask_selector(sel), _vect.nmi_vect), "NMI", true);
-	add_entry(2, toEA(ask_selector(sel), _vect.res_vect), "RESET", true);
-	add_entry(3, toEA(ask_selector(sel), _vect.irq_vect), "IRQ", true);
-
-	cdl_free();
 }
 
 //----------------------------------------------------------------------
