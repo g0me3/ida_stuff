@@ -130,12 +130,11 @@ void cdl_free() {
 }
 
 unsigned char char_trim(unsigned char c) {
-	if ((c > 0) && ((c < 0x30) || ((c > 0x39) && (c < 0x41)) || ((c > 0x5A) && (c < 0x61)) || (c > 0x7A)))
+	if ( (c < 0x30) || ((c > 0x39) && (c < 0x41)) || ((c > 0x5A) && (c < 0x61)) || (c > 0x7A) )
 		return '_';
 	else
 		return c;
 }
-
 
 //--------------------------------------------------------------------------
 //
@@ -145,7 +144,8 @@ void idaapi load_file(linput_t *li, ushort /*neflag*/, const char * /*fileformat
 {
 	unsigned int curea, ofs, size, i;
 	unsigned int mapper, _prg;
-	char nam[9], files_count = 0;
+	unsigned char hex[17] = "0123456789ABCDEF";
+	char nam[32], files_count = 0;
 	sel_t sel = 1;
 
 	qlseek(li, 0, SEEK_SET);
@@ -166,17 +166,6 @@ void idaapi load_file(linput_t *li, ushort /*neflag*/, const char * /*fileformat
 
 		while( qlread(li, &fds_block_idx, sizeof(fds_block_idx)) == sizeof(fds_block_idx) ) {
 			switch(fds_block_idx) {
-			case 0: {
-					if(files_count < fds_files.amount)
-						loader_failure("disc error at %08X", qltell(li));
-					if(qltell(li) < (65500 + 16))
-						qlseek(li, (65500 + 16), SEEK_SET);
-					else if(qltell(li) < ((65500 * 2) + 16))
-						qlseek(li, ((65500 * 2) + 16), SEEK_SET);
-					else if(qltell(li) < ((65500 * 3) + 16))
-						qlseek(li, ((65500 * 3) + 16), SEEK_SET);
-					break;
-					}
 			case 1: {
 					if(qlread(li, &fds_disk, sizeof(fds_disk_hdr)) != sizeof(fds_disk_hdr)) loader_failure("1");
 					nam[0] = fds_disk.name[0];
@@ -185,11 +174,15 @@ void idaapi load_file(linput_t *li, ushort /*neflag*/, const char * /*fileformat
 					nam[3] = fds_disk.name[3];
 					nam[4] = 0;
 					add_pgm_cmt("Disc  %d  Side: %d Name \"%-04s\" Boot %02X Manu %02X", fds_disk.disk_num, fds_disk.side_num, nam, fds_disk.boot_read, fds_disk.manufacturer);
+//					msg("Disc  %d  Side: %d Name \"%-04s\" Boot %02X Manu %02X\n", fds_disk.disk_num, fds_disk.side_num, nam, fds_disk.boot_read, fds_disk.manufacturer);
+//					info("1");
 					break;
 					}
 			case 2: {
 					if(qlread(li, &fds_files, sizeof(fds_file_amount)) != sizeof(fds_file_amount)) loader_failure("2");
 					add_pgm_cmt("Files %02X", fds_files.amount);
+//					msg("Files %02X\n", fds_files.amount);
+//					info("2");
 					break;
 					}
 			case 3: {
@@ -204,25 +197,37 @@ void idaapi load_file(linput_t *li, ushort /*neflag*/, const char * /*fileformat
 					nam[7] = fds_file.name[7];
 					nam[8] = 0;
 					add_pgm_cmt("      %02X %02X \"%-08s\" addr %04X size %04X [%s]", fds_file.num, fds_file.code, nam, fds_file.addr, fds_file.size,(fds_file.type==0)?"PROG":((fds_file.type==1)?"CHAR":"NT"));
+//					msg("      %02X %02X \"%-08s\" addr %04X size %04X [%s]\n", fds_file.num, fds_file.code, nam, fds_file.addr, fds_file.size,(fds_file.type==0)?"PROG":((fds_file.type==1)?"CHAR":"NT"));
+//					info("3");
 					files_count++;
 					break;
 					}
 			case 4: {
 					if(fds_file.type == 0) {
-						if((fds_file.code > 0) && (fds_file.code <= fds_disk.boot_read)) {
+						if((fds_file.code > 0) && (fds_file.code <= fds_disk.boot_read) && (fds_disk.side_num == 0)) {
 							file2base(li, qltell(li), fds_file.addr, fds_file.addr + fds_file.size, FILEREG_PATCHABLE);
 						} else {
 							set_selector(sel, curea >> 4);
-							nam[0] = char_trim(fds_file.name[0]);
-							nam[1] = char_trim(fds_file.name[1]);
-							nam[2] = char_trim(fds_file.name[2]);
-							nam[3] = char_trim(fds_file.name[3]);
-							nam[4] = char_trim(fds_file.name[4]);
-							nam[5] = char_trim(fds_file.name[5]);
-							nam[6] = char_trim(fds_file.name[6]);
-							nam[7] = char_trim(fds_file.name[7]);
-							nam[8] = 0;
+							nam[0] = (fds_disk.disk_num == 0) ? 'A':'B';
+							nam[1] = '-';
+							nam[2] = hex[(fds_file.num >> 4) & 0xF];
+							nam[3] = hex[(fds_file.num >> 0) & 0xF];
+							nam[4] = '-';
+							nam[5] = hex[(fds_file.code >> 4) & 0xF];
+							nam[6] = hex[(fds_file.code >> 0) & 0xF];
+							nam[7] = '-';
+							nam[8] = char_trim(fds_file.name[0]);
+							nam[9] = char_trim(fds_file.name[1]);
+							nam[10] = char_trim(fds_file.name[2]);
+							nam[11] = char_trim(fds_file.name[3]);
+							nam[12] = char_trim(fds_file.name[4]);
+							nam[13] = char_trim(fds_file.name[5]);
+							nam[14] = char_trim(fds_file.name[6]);
+							nam[15] = char_trim(fds_file.name[7]);
+							nam[16] = 0;
 							if(!add_segm(sel, curea + fds_file.addr, curea + fds_file.addr + fds_file.size, nam, CLASS_CODE)) loader_failure();
+//							msg("     seg name %s (%c%c%c%c%c%c%c%c)\n", nam, fds_file.name[0],fds_file.name[1],fds_file.name[2],fds_file.name[3],fds_file.name[4],fds_file.name[5],fds_file.name[6],fds_file.name[7]);
+//							info("4");
 							file2base(li, qltell(li), curea + fds_file.addr, curea + fds_file.addr + fds_file.size, FILEREG_PATCHABLE);
 							curea += 0x10000;
 							sel++;
@@ -235,7 +240,14 @@ void idaapi load_file(linput_t *li, ushort /*neflag*/, const char * /*fileformat
 					break;
 					}
 			default: {
-					loader_failure("file code error at %08X", qltell(li));
+					if(files_count < fds_files.amount)
+						loader_failure("disc error at %08X", qltell(li));
+					if(qltell(li) < (65500 + 16))
+						qlseek(li, (65500 + 16), SEEK_SET);
+					else if(qltell(li) < ((65500 * 2) + 16))
+						qlseek(li, ((65500 * 2) + 16), SEEK_SET);
+					else if(qltell(li) < ((65500 * 3) + 16))
+						qlseek(li, ((65500 * 3) + 16), SEEK_SET);
 					break;
 					}
 			}
