@@ -38,7 +38,7 @@ int idaapi accept_file(linput_t *li, char fileformatname[MAX_FILE_FORMAT_NAME], 
 	if(_hdr.signature == 0x1A53454E) {
 		qstrncpy(fileformatname, "Famicom/NES emulator iNES ROM file", MAX_FILE_FORMAT_NAME);
 		return(1);
-	} else if(_hdr.signature == 0x1A534446) {
+	} else if((_hdr.signature == 0x1A534446) || (_hdr.signature == 0x494E2A01)) {
 		qstrncpy(fileformatname, "Famicom/NES emulator FDS image file", MAX_FILE_FORMAT_NAME);
 		return(1);
 	} else
@@ -145,7 +145,7 @@ void idaapi load_file(linput_t *li, ushort /*neflag*/, const char * /*fileformat
 	unsigned int curea, ofs, size, i;
 	unsigned int mapper, _prg;
 	unsigned char hex[17] = "0123456789ABCDEF";
-	char nam[32], files_count = 0;
+	char nam[32], files_count, disk_count = 0;
 	sel_t sel = 1;
 
 	qlseek(li, 0, SEEK_SET);
@@ -153,7 +153,10 @@ void idaapi load_file(linput_t *li, ushort /*neflag*/, const char * /*fileformat
 
 	set_processor_type("M6502", SETPROC_ALL|SETPROC_FATAL);
 
-	if(_hdr.signature == 0x1A534446) { // FDS
+	if((_hdr.signature == 0x1A534446) || (_hdr.signature == 0x494E2A01)) { // FDS
+
+		if(_hdr.signature == 0x494E2A01)	// no header, return back to the start of a file!
+			qlseek(li, 0, SEEK_SET);
 
 		create_filename_cmt();
 		set_selector(0, 0);
@@ -173,6 +176,7 @@ void idaapi load_file(linput_t *li, ushort /*neflag*/, const char * /*fileformat
 					nam[2] = fds_disk.name[2];
 					nam[3] = fds_disk.name[3];
 					nam[4] = 0;
+					disk_count++;
 					add_pgm_cmt("Disc  %d  Side: %d Name \"%-04s\" Boot %02X Manu %02X", fds_disk.disk_num, fds_disk.side_num, nam, fds_disk.boot_read, fds_disk.manufacturer);
 //					msg("Disc  %d  Side: %d Name \"%-04s\" Boot %02X Manu %02X\n", fds_disk.disk_num, fds_disk.side_num, nam, fds_disk.boot_read, fds_disk.manufacturer);
 //					info("1");
@@ -180,6 +184,7 @@ void idaapi load_file(linput_t *li, ushort /*neflag*/, const char * /*fileformat
 					}
 			case 2: {
 					if(qlread(li, &fds_files, sizeof(fds_file_amount)) != sizeof(fds_file_amount)) loader_failure("2");
+					files_count = 0;
 					add_pgm_cmt("Files %02X", fds_files.amount);
 //					msg("Files %02X\n", fds_files.amount);
 //					info("2");
@@ -196,19 +201,19 @@ void idaapi load_file(linput_t *li, ushort /*neflag*/, const char * /*fileformat
 					nam[6] = fds_file.name[6];
 					nam[7] = fds_file.name[7];
 					nam[8] = 0;
-					add_pgm_cmt("      %02X %02X \"%-08s\" addr %04X size %04X [%s]", fds_file.num, fds_file.code, nam, fds_file.addr, fds_file.size,(fds_file.type==0)?"PROG":((fds_file.type==1)?"CHAR":"NT"));
+					files_count++;
+					add_pgm_cmt("      %02X %02X \"%-08s\" addr %04X size %04X [%s] %s", fds_file.num, fds_file.code, nam, fds_file.addr, fds_file.size,(fds_file.type==0)?"PROG":((fds_file.type==1)?"CHAR":"NT"),(files_count > fds_files.amount) ? "[HIDDEN]":"");
 //					msg("      %02X %02X \"%-08s\" addr %04X size %04X [%s]\n", fds_file.num, fds_file.code, nam, fds_file.addr, fds_file.size,(fds_file.type==0)?"PROG":((fds_file.type==1)?"CHAR":"NT"));
 //					info("3");
-					files_count++;
 					break;
 					}
 			case 4: {
 					if(fds_file.type == 0) {
-						if((fds_file.code > 0) && (fds_file.code <= fds_disk.boot_read) && (fds_disk.side_num == 0)) {
+						if((fds_file.code >= 0) && (fds_file.code <= fds_disk.boot_read) && (fds_disk.side_num == 0) && (disk_count == 1)) {
 							file2base(li, qltell(li), fds_file.addr, fds_file.addr + fds_file.size, FILEREG_PATCHABLE);
 						} else {
 							set_selector(sel, curea >> 4);
-							nam[0] = (fds_disk.disk_num == 0) ? 'A':'B';
+							nam[0] = (fds_disk.side_num == 0) ? 'A':'B';
 							nam[1] = '-';
 							nam[2] = hex[(fds_file.num >> 4) & 0xF];
 							nam[3] = hex[(fds_file.num >> 0) & 0xF];
@@ -225,6 +230,13 @@ void idaapi load_file(linput_t *li, ushort /*neflag*/, const char * /*fileformat
 							nam[14] = char_trim(fds_file.name[6]);
 							nam[15] = char_trim(fds_file.name[7]);
 							nam[16] = 0;
+							int i;
+							for(i = 15; i > 7; i--)
+								if(((nam[i] == '_') || (nam[i] == ' ')) && (nam[i + 1] == 0))
+									nam[i] = 0;
+							if(nam[8] == 0)
+								nam[7] = 0;
+
 							if(!add_segm(sel, curea + fds_file.addr, curea + fds_file.addr + fds_file.size, nam, CLASS_CODE)) loader_failure();
 //							msg("     seg name %s (%c%c%c%c%c%c%c%c)\n", nam, fds_file.name[0],fds_file.name[1],fds_file.name[2],fds_file.name[3],fds_file.name[4],fds_file.name[5],fds_file.name[6],fds_file.name[7]);
 //							info("4");
