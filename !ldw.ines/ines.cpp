@@ -142,7 +142,7 @@ unsigned char char_trim(unsigned char c) {
 //
 void idaapi load_file(linput_t *li, ushort /*neflag*/, const char * /*fileformatname*/)
 {
-	unsigned int curea, ofs, size, i;
+	unsigned int curea, ofs, size, i, header_size = 16;
 	unsigned int mapper, _prg;
 	unsigned char hex[17] = "0123456789ABCDEF";
 	char nam[32], files_count, disk_count = 0;
@@ -155,8 +155,10 @@ void idaapi load_file(linput_t *li, ushort /*neflag*/, const char * /*fileformat
 
 	if((_hdr.signature == 0x1A534446) || (_hdr.signature == 0x494E2A01)) { // FDS
 
-		if(_hdr.signature == 0x494E2A01)	// no header, return back to the start of a file!
+		if(_hdr.signature == 0x494E2A01) {	// no header, return back to the start of a file!
 			qlseek(li, 0, SEEK_SET);
+			header_size = 0;
+		}
 
 		create_filename_cmt();
 		set_selector(0, 0);
@@ -254,12 +256,12 @@ void idaapi load_file(linput_t *li, ushort /*neflag*/, const char * /*fileformat
 			default: {
 					if(files_count < fds_files.amount)
 						loader_failure("disc error at %08X", qltell(li));
-					if(qltell(li) < (65500 + 16))
-						qlseek(li, (65500 + 16), SEEK_SET);
-					else if(qltell(li) < ((65500 * 2) + 16))
-						qlseek(li, ((65500 * 2) + 16), SEEK_SET);
-					else if(qltell(li) < ((65500 * 3) + 16))
-						qlseek(li, ((65500 * 3) + 16), SEEK_SET);
+					if(qltell(li) < (65500 + header_size))
+						qlseek(li, (65500 + header_size), SEEK_SET);
+					else if(qltell(li) < ((65500 * 2) + header_size))
+						qlseek(li, ((65500 * 2) + header_size), SEEK_SET);
+					else if(qltell(li) < ((65500 * 3) + header_size))
+						qlseek(li, ((65500 * 3) + header_size), SEEK_SET);
 					break;
 					}
 			}
