@@ -2,32 +2,13 @@
 // SCRIPT PARSE HELPERS
 // -------------------
 
-static make_auto_ofs16_gb(ea, bofs) {
-	auto word0, bank0, base;
+static make_auto_ofs16_gb(ea) {
+	auto word0, bank0, base = -1;
 	MakeUnknown(ea, 2, DOUNK_SIMPLE);
 	MakeWord(ea);
 	word0 = Word(ea);
-	if(bofs == 0)
-		bank0 = GetReg(ea,"ds");
-	else {
-		if((bofs > 0) && (bofs & 0x100))
-			bank0 = bofs & 0xFF;
-		else
-			bank0 = Byte(ea + bofs);
-	}
-	if(bank0>0) {
-		if(word0<0x4000)
-			base = MK_FP(AskSelector(0), 0);
-		else
-			base = MK_FP(AskSelector(bank0), 0);
-	}
-	else {
-		if(word0<0x4000)
-			base = MK_FP(AskSelector(0), 0);
-		else
-			base = -1;
-	}
-	if(base!=-1)
+	base = get_base_gb_common(ea, word0);
+	if(base != -1)
 		OpOffEx(ea, 0, REF_OFF16, -1, base, 0);
 	return ea + 2;
 }
@@ -42,7 +23,7 @@ static make_auto_ofs16_nes(ea) {
 		ea = make_offset_ex(ea, 7, 0, 1);
 	} else {
 		if((bank==7)&&(ofs<0xC000)) {
-			ea = make_offset_ex(ea, AskLong(0, "Enter Bank Nunber"), 0, 1);
+			ea = make_offset_ex(ea, AskLong(0, "Enter Bank Number"), 0, 1);
 		} else
 			ea = make_offset_ex(ea, bank, 0, 1);
 	}*/
@@ -55,7 +36,7 @@ static auto_far_ptr() {
 }
 
 static auto_far_ptr_ex(ea,mode,arg) {
-	auto bofs, wofs, base, size, cnt, cnt0, cnt1, tmp1, tmp0;
+	auto bofs, wofs, base, size, cnt, cnt0, cnt1, tmp0, tmp1;
 	auto bank0 = GetReg(ea,"ds");
 
 //	Message("far ptr at 0x%08x, mode %d, arg %d\n",ea,mode,arg);
@@ -136,7 +117,7 @@ static auto_far_ptr_ex(ea,mode,arg) {
 
 		Jump(ea + 6);
 */
-///*
+/*
 			auto temp0 = MK_FP(AskSelector(Byte(ea + 0) + 1), 0);
 			auto temp0A = temp0 + (Byte(ea + 1) << 1) + 0x8001;
 			auto temp1 = temp0 + Word(temp0A);
@@ -414,51 +395,201 @@ static auto_far_ptr_ex(ea,mode,arg) {
 //			make_data_array(ea, ((strlen(pat) + 1) / 3), "");
 //			SetManualInsn(ea, instr);
 //		}
+/*
+//		bofs = 1;
+//		wofs = 2;
+//		size = 4;
+		MakeUnknown(ea, 3, DOUNK_SIMPLE);
+		MakeWord(ea);
+		MakeByte(ea + 2);
+		OpOffEx(ea, 0, REF_OFF16, -1, MK_FP(AskSelector(bank0), 0), 0);
+		Jump(ea + 3);*/
+/*
+		auto v0 = Byte(ea);
+		if(v0 == 0) {
+			MakeUnknown(ea, 1, DOUNK_SIMPLE);
+			MakeByte(ea);
+		} else {
+			MakeUnknown(ea, (v0 * 4) + 3, DOUNK_SIMPLE);
+			MakeByte(ea);
+			MakeWord(ea+1);
+			ea = ea + 3;
+			for(cnt=0;cnt<v0;cnt++)
+				ea = make_data_array(ea, 4, "");
+		}
+//		Jump(ea); //*/
 
 /*
-		bofs = 1;
-		wofs = 2;
-		size = 4;
-		MakeUnknown(ea, 4, DOUNK_SIMPLE);
-		MakeByte(ea + 0);
-		far_ptr(ea + 1, 0, 1, 0, 0);
-		ea = ea + 4;
-		base = MK_FP(AskSelector(bank0), 0);
-		while(Word(ea) != 0xFFFF) {
-			MakeUnknown(ea, 2, DOUNK_SIMPLE);
-			OpOffEx(ea, 0, REF_OFF16, -1, base, 0);
-			ea = ea + 2;
-		}
-		MakeUnknown(ea, 2, DOUNK_SIMPLE);
-		MakeWord(ea);
-		Jump(ea + 2);
-//*/
+		MakeUnknown(ea, 8, DOUNK_SIMPLE);
+		MakeWord(ea + 0);
+		MakeByte(ea + 2);
+		MakeByte(ea + 3);
+		MakeByte(ea + 4);
+		MakeByte(ea + 5);
+		MakeWord(ea + 6);
+		base = MK_FP(AskSelector(Byte(ea + 6)), 0);
+		addr = Byte(ea + 3) | (Byte(ea + 2) << 8);
+		OpOffEx(ea + 2, 0, REF_HIGH8, base + addr, base, 0);
+		OpOffEx(ea + 3, 0, REF_LOW8, base + addr, base, 0);
+		addr = Byte(ea + 5) | (Byte(ea + 4) << 8);
+		OpOffEx(ea + 4, 0, REF_HIGH8, base + addr, base, 0);
+		OpOffEx(ea + 5, 0, REF_LOW8, base + addr, base, 0);
+		Jump(ea + 8);
+//*
+
 /*
+		auto v0 = Byte(ea), v1;
+		if((v0==0x4)||(v0==0x9)) {
+			MakeUnknown(ea, 6, DOUNK_SIMPLE);
+			ea = make_data_array(ea, 1, "");
+			v1 = Byte(ea + 4);
+			make_data_array(ea, 1, "");
+			make_data_array(ea + 1, 1, "");
+
+			addr = Byte(ea + 1) | (Byte(ea) << 8);
+			if(addr < 0x4000) v1 = 0;
+			base = MK_FP(AskSelector(v1), 0);
+			OpOffEx(ea + 1, 0, REF_LOW8, base + addr, base, 0);
+			OpOffEx(ea, 0, REF_HIGH8, base + addr, base, 0);
+
+			ea = ea + 2;
+			ea = make_data_array(ea, 3, "");
+		} else if((v0==0x1)) {
+			MakeUnknown(ea, 9, DOUNK_SIMPLE);
+			ea = make_data_array(ea, 1, "");
+			v1 = Byte(ea + 7);
+			make_data_array(ea, 1, "");
+			make_data_array(ea + 1, 1, "");
+
+			addr = Byte(ea + 1) | (Byte(ea) << 8);
+			if(addr < 0x4000) v1 = 0;
+			base = MK_FP(AskSelector(v1), 0);
+			OpOffEx(ea + 1, 0, REF_LOW8, base + addr, base, 0);
+			OpOffEx(ea, 0, REF_HIGH8, base + addr, base, 0);
+
+			ea = ea + 2;
+			ea = make_data_array(ea, 6, "");
+		} else {
+//			ea = ea - 1;
+		}
+		Jump(ea); //*/
+
+///* SIMPLE FAR OFS
+//if(Word(ea)!=0xFFFF) {
 		bofs = 0;
 		wofs = 1;
-		size = 3;
+//		if(Byte(ea) == 5)
+//			size = 6;
+//		else if(Byte(ea) == 4)
+//			if((Byte(ea + 6) & 0x80))
+//				size = 8;
+//			else
+//				size = 7;
+//		else
+			size = 3;
+//if((Byte(ea) != 0xFF)) {
 		MakeUnknown(ea, size, DOUNK_SIMPLE);
+//		make_data_array(ea, size, "");
+//} else {
 		MakeByte(ea + bofs);
+//		MakeWord(ea + bofs);
 		MakeWord(ea + wofs);
-		auto v0 = Byte(ea + bofs) + 0x13;
-		base = MK_FP(AskSelector(v0), 0);
-		OpOffEx(ea + wofs, 0, REF_OFF32, -1, base, -0x4000);
+		//MakeWord(ea + wofs + 2);
+//		MakeWord(ea + wofs + 4);
+//		if(Word(ea + wofs) > 0x4000)
+			base = MK_FP(AskSelector(Byte(ea + bofs)), 0);
+//		else
+//			base = 0;
+//		if(Byte(ea) != 4)
+			OpOffEx(ea + wofs, 0, REF_OFF16, -1, base, 0);
+//		MakeWord(ea + wofs + 2);
+//			OpOffEx(ea + wofs + 2, 0, REF_OFF16, -1, base, 0);
+//		base = get_base_gb_common(ea + wofs + 2, Word(ea + wofs + 2));
+//		if(Byte(ea) != 4)
+//			OpOffEx(ea + wofs + 2, 0, REF_OFF16, -1, base, 0);
+//		if(size == 8)
+//			MakeWord(ea + wofs + 4);
+//		else if(size == 7)
+//			MakeByte(ea + wofs + 4);
+//		MakeData(ea + 3, FF_BYTE, 5, 0);
+//		SetArrayFormat(ea + 3, AP_IDXHEX, 5, 0);
+//		MakeWord(ea + 4);
+//		MakeWord(ea + 6);
+//		MakeByte(ea + wofs + 2);
+//}
+
+//		MakeByte(ea + 0);
+//		MakeByte(ea + 1);
+//		MakeWord(ea + 2);
+//		base = MK_FP(AskSelector(Byte(ea + 1)), 0);
+//		OpOffEx(ea + 2, 0, REF_OFF16, -1, base, 0);
+//		MakeByte(ea + 4);
+//		MakeWord(ea + 1 + 4);
+//		base = MK_FP(AskSelector(Byte(ea + 4)), 0);
+//		OpOffEx(ea + 1 + 4, 0, REF_OFF16, -1, base, 0);
+//		MakeByte(ea + 7);
+//		MakeWord(ea + 1 + 7);
+//		base = MK_FP(AskSelector(Byte(ea + 7)), 0);
+//		OpOffEx(ea + 1 + 7, 0, REF_OFF16, -1, base, 0);
+//		make_data_array(ea + 3 + 7, 2, "");
+
+//		MakeWord(ea + wofs);
+//		MakeWord(ea + wofs + 2);
+//		MakeWord(ea + wofs);
+//		make_data_array(ea + 4, 4, "");
+//		MakeByte(ea + bofs);
+//		MakeWord(ea + 3);
+//		MakeByte(ea + 0);
+//		base = MK_FP(AskSelector(Byte(ea + bofs) & 0x7F), 0);
+//		OpOffEx(ea + wofs, 0, REF_OFF16, -1, base, 0);
 		Jump(ea + size);
+//  }else {
+//		MakeUnknown(ea, 1, DOUNK_SIMPLE);
+//		MakeByte(ea);
+//		MakeWord(ea + 0);
+//		base = MK_FP(AskSelector(0), 0);
+//		OpOffEx(ea + 1, 0, REF_OFF16, -1, base, 0);
+//		Jump(ea + 1);
+//}
 //*/
+
 /*
-		auto cmd1;
-		while((cmd1 = Byte(ea)) != 0xFF) {
-				MakeUnknown(ea, 7, DOUNK_SIMPLE);
-				MakeByte(ea + 0);
-				MakeWord(ea + 1);
-				far_ptr(ea, 0, 1, 0, 0);
-				MakeWord(ea + 3);
-				MakeWord(ea + 5);
-				ea = ea + 7;
+		tmp0 = MK_FP(AskSelector(Byte(ea + 2)), 0);
+		tmp0 = tmp0 + (Byte(ea + 1) * 3) + 0x4000;
+		SetManualInsn(ea, form("ld      de, %s", Name(tmp0)));
+		AddCodeXref(ea, tmp0, fl_CF|XREF_USER);
+		make_code(tmp0);
+//*/
+
+/*
+		tmp0 = MK_FP(AskSelector(Byte(ea + 2)), 0);
+		tmp1 = (Byte(ea + 3) * 2) + 0x4000;
+		tmp1 = Word(tmp0 + tmp1);
+		tmp0 = tmp0 + tmp1;
+		MakeUnknown(ea, 4, DOUNK_SIMPLE);
+		MakeData(ea, FF_BYTE, 4, 0);
+		SetArrayFormat(ea, AP_IDXHEX, 4, 0);
+		SetManualInsn(ea, form("CHR_SYS %04X, %s", Word(ea + 0), Name(tmp0)));
+//		AddCodeXref(ea, tmp0, fl_CF|XREF_USER);
+		add_dref(ea, tmp0, dr_O|XREF_USER);
+//		make_code(tmp0);
+		Jump(ea+4);
+//*/
+
+/*
+		auto t0 = 0x7bad9, t1 = 0x7bb2a;
+		tmp0 = 0x78000;
+		tmp1 = 0;
+		while(t0 + tmp1 < t1) {
+			tmp0 = tmp0 + Byte(t0 + tmp1);
+			tmp1 = tmp1 + 1;
+			MakeName(tmp0,form("_room_2p%02X",tmp1));
 		}
-		MakeUnknown(ea, 1, DOUNK_SIMPLE);
-		MakeByte(ea);
-		Jump(ea + 1);
+
+//		MakeUnknown(ea, cnt0 + 1, DOUNK_SIMPLE);
+//		MakeData(ea, FF_BYTE, cnt0 + 1, 0);
+//		SetArrayFormat(ea, AP_IDXHEX, 16, 0);
+
 //*/
 /*
 		MakeUnknown(ea, 3, DOUNK_SIMPLE);
@@ -480,21 +611,33 @@ static auto_far_ptr_ex(ea,mode,arg) {
 		ea = make_auto_ofs16_gb(ea);
 		Jump(ea);
 //*/
-
 	// --
 	}
 }
 
+static make_data_array_custom(ea, len, dur, cmt) {
+	MakeUnknown(ea, len, DOUNK_SIMPLE);
+//	if(len == 2) {
+//		MakeWord(ea);
+//	} else {
+		MakeData(ea, FF_BYTE, len, 0);
+		SetArrayFormat(ea, AP_IDXHEX, dur, 0);
+//	}
+	MakeComm(ea, "");
+	MakeComm(ea, cmt);
+	return ea + len;
+}
+
 static make_data_array(ea, len, cmt) {
 	MakeUnknown(ea, len, DOUNK_SIMPLE);
-	if(len == 2) {
-		MakeWord(ea);
-	} else {
+//	if(len == 2) {
+//		MakeWord(ea);
+//	} else {
 		MakeData(ea, FF_BYTE, len, 0);
-		SetArrayFormat(ea, AP_IDXHEX, len, 0);
-	}
-//	MakeComm(ea, "");
-//	MakeComm(ea, cmt);
+		SetArrayFormat(ea, AP_IDXHEX, 16, 0);
+//	}
+	MakeComm(ea, "");
+	MakeComm(ea, cmt);
 	return ea + len;
 }
 
@@ -648,7 +791,9 @@ static parametric_farcall(opcode, size, segmask, bankop, ofsop, delta, shift, do
 			MakeUnknown(ea, size + 3, DOUNK_SIMPLE);
 
 			offs = Word(ea + ofsop);
-//			if(offs < 0xA000)
+			if(offs > 0xC000)
+				bank = 15 + 1;
+			else
 				bank = ((Byte(ea + bankop) << shift) & segmask) + 1;
 //			else
 //				bank = ((Byte(ea + bankop) << shift) & segmask) + 2;
@@ -724,51 +869,28 @@ static make_16bit_near_tbl(ea, ofs) {
 		size = size + 2;
 	} while (ea + size + 3 < (maxea - ofs));
 	Wait();
-//	MakeCode(ea + size + 3);
-//	AutoMark(ea + size + 3, AU_CODE);
-//	MakeCode(maxea - ofs);
-//	AutoMark(maxea - ofs, AU_CODE);
+	MakeCode(ea + size + 3);
+	AutoMark(ea + size + 3, AU_CODE);
+	MakeCode(maxea - ofs);
+	AutoMark(maxea - ofs, AU_CODE);
 	Wait();
 }
 
 static make_8bit_ofs(ea, loofs, hiofs, ofs) {
-	auto base = BADADDR, addr = Byte(ea + loofs + 1) | (Byte(ea + hiofs + 1) << 8);
-	auto seg = GetReg(ea,"ds");
-	auto segorg = getSegOrg(seg);
-	auto segsize = getSegSize(seg);
-//	Message("ea = 0x%08x, seg = %1x, segorg = %04x, segsize = %04x addr = %04x\n", ea, seg, segorg, segsize, addr);
-	if(segsize == 0x2000) {// 8k seg size, 16 banks
-		if(addr < 0x8000) {
-			base = MK_FP(AskSelector(0), 0);
-//			Message(" 0000-7FFF base = %08x!\n", base);
-		} else if(segorg == (addr & 0xE000)) {
-			base = MK_FP(AskSelector(seg), 0);
-//			Message(" %04x-%04x base = %08x!\n",segorg, segsize-1, base);
-		} else if((addr & 0xE000) == 0xC000) {
-			base = MK_FP(AskSelector(14+1), 0);
-//			Message(" C000-DFFF base = %08x!\n", base);
-		} else if((addr & 0xE000) == 0xE000) {
-			base = MK_FP(AskSelector(15+1), 0);
-//			Message(" E000-FFFF base = %08x!\n", base);
+	auto base = BADADDR, addr = Byte(ea + loofs + 1) | (Byte(ea + hiofs + 1) << 8), extbank = -1, extbase;
+		if(SegByName(form("ROM%X",0))==BADADDR) {	// NES mode
+			base = get_base_nes_common(ea, addr);
 		} else {
-			base = MK_FP(AskSelector(AskLong(0, "Enter Bank Nunber") + 1), 0);
-//			Message(" custom base = %08x!\n", base);
+			base = get_base_gb_common(ea, addr);
 		}
-	} else if(segsize == 0x4000) {// 16k seg size, 7 banks
-		if(addr < 0x8000)
-			base = MK_FP(AskSelector(0), 0);
-		else if(segorg == (addr & 0xC000))
-			base = MK_FP(AskSelector(seg), 0);
-		else if((addr & 0xE000) == 0xC000)
-			base = MK_FP(AskSelector(7+1), 0);
-		else
-			base = MK_FP(AskSelector(AskLong(0, "Enter Bank Nunber") + 1), 0);
-	} else if(segsize == 0x8000) {// 32k seg size
-		if(addr < 0x8000)
-			base = MK_FP(AskSelector(0), 0);
-		else
-			base = MK_FP(AskSelector(seg), 0);
-	}
+		if(base == -1)
+		{
+			if(extbank == -1) {
+				extbank = AskLong(1, form("Enter External Bank 0 (ea = %08X addr = %04X)",ea,addr) );
+				extbase = MK_FP(AskSelector(extbank + 1), 0);
+			}
+			base = extbase;
+		}
 	if(base != BADADDR) {
 		OpOffEx(ea + loofs, 0, REF_LOW8, base + addr - ofs, base, ofs);
 		OpOffEx(ea + hiofs, 0, REF_HIGH8, base + addr - ofs, base, ofs);
@@ -777,10 +899,15 @@ static make_8bit_ofs(ea, loofs, hiofs, ofs) {
 }
 
 static make_8bit_far_ofs(ea, loofs, hiofs, ofs, bank) {
-	auto base, addr = Byte(ea + loofs + 1) | (Byte(ea + hiofs + 1) << 8);
+	auto base, arg = 0, addr = Byte(ea + loofs + 1) | (Byte(ea + hiofs + 1) << 8);
+	if(SegByName("ROM0")!=BADADDR) {	// GB mode
+		bank = bank - 1;
+		arg = 1;
+		if(addr < 0x4000) bank = 0;
+	}
 	base = MK_FP(AskSelector(bank), 0);
-	OpOffEx(ea + loofs, 0, REF_LOW8, base + addr - ofs, base, ofs);
-	OpOffEx(ea + hiofs, 0, REF_HIGH8, base + addr - ofs, base, ofs);
+	OpOffEx(ea + loofs, arg, REF_LOW8, base + addr - ofs, base, ofs);
+	OpOffEx(ea + hiofs, arg, REF_HIGH8, base + addr - ofs, base, ofs);
 }
 
 static make_8bit_near_tbl(loaddr, hiaddr, ofs, code) {
@@ -791,41 +918,26 @@ static make_8bit_near_tbl(loaddr, hiaddr, ofs, code) {
 		size = loaddr - hiaddr;
 	MakeUnknown(loaddr, size, DOUNK_SIMPLE);
 	MakeUnknown(hiaddr, size, DOUNK_SIMPLE);
-	Message(form("debug lo = %08x, hi = %08x\n",loaddr, hiaddr));
+//	Message(form("debug lo = %08x, hi = %08x\n",loaddr, hiaddr));
 
 	for(i=0; i<size; i++) {
 		auto lptr, hptr, base, bank, refptr;
 		lptr = Byte(loaddr + i);
 		hptr = Byte(hiaddr + i);
 		refptr = lptr | (hptr << 8);
-		bank = GetReg(loaddr,"ds");
 		if(SegByName(form("ROM%X",0))==BADADDR) {	// NES mode
-//			if(refptr < 0x8000)
-//				base = MK_FP(AskSelector(0), 0);
-//			else if(refptr < 0xC000)				// 16K banks
-				base = MK_FP(AskSelector(bank), 0);
-//				base = MK_FP(AskSelector(AskLong(1, "Enter External Bank") + 1), 0);
-//			else
-//				base = MK_FP(AskSelector(8), 0);
+			base = get_base_nes_common(loaddr, refptr);
 		} else {
-			if(bank==0){
-				if(refptr<0x4000) {
-					base = MK_FP(AskSelector(0), 0);
-				} else if(refptr<0x8000){
-					if(extbank == -1) {
-						extbank = AskLong(1, "Enter External Bank");
-						extbase = MK_FP(AskSelector(extbank), 0);
-					}
-					base = extbase;
-//					base = MK_FP(AskSelector(1), 0);
-				}
-			} else {
-				if(refptr<0x4000) {
-					base = MK_FP(AskSelector(0), 0);
-				} else if(refptr<0x8000) {
-					base = MK_FP(AskSelector(bank), 0);
-				}
+			base = get_base_gb_common(loaddr, refptr);
+		}
+		if(base == -1) {
+			if(extbank == -1) {
+				extbank = AskLong(1, "Enter External Bank 1");
+				if(SegByName(form("ROM%X",0))==BADADDR)	// NES mode
+					extbank = extbank + 1;
 			}
+			extbase = MK_FP(AskSelector(extbank), 0);
+			base = extbase;
 		}
 		MakeByte(loaddr + i);
 		if(refptr!=0)
@@ -893,7 +1005,7 @@ static make_8bit_ofs_selection2() {
 
 static make_8bit_far_ofs_selection2() {
 	auto ea = ScreenEA();
-	auto bank = AskLong(0, "Enter Bank Nunber");
+	auto bank = AskLong(0, "Enter Bank Number 2");
 	if(ea != BADADDR)
 		make_8bit_far_ofs(ea, 0, 2, 0, bank + 1);
 }
@@ -906,7 +1018,7 @@ static make_8bit_ofs_selection2_i() {
 
 static make_8bit_far_ofs_selection2_i() {
 	auto ea = ScreenEA();
-	auto bank = AskLong(0, "Enter Bank Nunber");
+	auto bank = AskLong(0, "Enter Bank Number 3");
 	if(ea != BADADDR)
 		make_8bit_far_ofs(ea, 2, 0, 0, bank + 1);
 }
@@ -931,7 +1043,7 @@ static make_8bit_ofs_selection3_d_i() {
 
 static make_8bit_far_ofs_selection3_i() {
 	auto ea = ScreenEA();
-	auto bank = AskLong(0, "Enter Bank Nunber");
+	auto bank = AskLong(0, "Enter Bank Number 4");
 	if(ea != BADADDR)
 		make_8bit_far_ofs(ea, 3, 0, 0, bank + 1);
 }
@@ -944,7 +1056,7 @@ static make_8bit_ofs_selection4() {
 
 static make_8bit_far_ofs_selection4() {
 	auto ea = ScreenEA();
-	auto bank = AskLong(0, "Enter Bank Nunber");
+	auto bank = AskLong(0, "Enter Bank Number 5");
 	if(ea != BADADDR)
 		make_8bit_far_ofs(ea, 0, 4, 0, bank + 1);
 }
@@ -957,7 +1069,7 @@ static make_8bit_ofs_selection4_i() {
 
 static make_8bit_far_ofs_selection4_i() {
 	auto ea = ScreenEA();
-	auto bank = AskLong(0, "Enter Bank Nunber");
+	auto bank = AskLong(0, "Enter Bank Number 6");
 	if(ea != BADADDR)
 		make_8bit_far_ofs(ea, 4, 0, 0, bank + 1);
 }
@@ -970,7 +1082,7 @@ static make_8bit_ofs_selection5() {
 
 static make_8bit_far_ofs_selection5() {
 	auto ea = ScreenEA();
-	auto bank = AskLong(0, "Enter Bank Nunber");
+	auto bank = AskLong(0, "Enter Bank Number 7");
 	if(ea != BADADDR)
 		make_8bit_far_ofs(ea, 0, 5, 0, bank + 1);
 }
@@ -993,9 +1105,21 @@ static make_8bit_ofs_selection6_i() {
 		make_8bit_ofs(ea, 6, 0, 0);
 }
 
+static make_8bit_ofs_selection7() {
+	auto ea = ScreenEA();
+	if(ea != BADADDR)
+		make_8bit_ofs(ea, 0, 7, 0);
+}
+
+static make_8bit_ofs_selection7_i() {
+	auto ea = ScreenEA();
+	if(ea != BADADDR)
+		make_8bit_ofs(ea, 7, 0, 0);
+}
+
 static make_8bit_far_ofs_selection6() {
 	auto ea = ScreenEA();
-	auto bank = AskLong(0, "Enter Bank Nunber");
+	auto bank = AskLong(0, "Enter Bank Number 8");
 	if(ea != BADADDR)
 		make_8bit_far_ofs(ea, 0, 6, 0, bank + 1);
 }
@@ -1010,8 +1134,10 @@ static make_8bit_near_selection() {
 			b0 = 0;
 		else if(Word(sea)<0xC000)
 			b0 = GetReg(sea, "ds") - 1;
+		else if(Word(sea)<0xE000)
+			b0 = 0x3E;
 		else
-			b0 = 0x7;
+			b0 = 0x3F;
 		Jump(make_offset_ex(sea, b0, 0, 1));
 	} else {
 		mea = (sea + eea) / 2;
@@ -1042,20 +1168,8 @@ static make_8bit_near_selection_i() {
 	auto mea;
 	if((sea == BADADDR) || (eea == BADADDR)) {
 		sea = ScreenEA();
-/* FAR NES!!
-		auto addr = Byte(sea + 1) | (Byte(sea) << 8);
-		auto bank = AskLong(0, "Enter Bank Nunber");
-		auto base = MK_FP(AskSelector(bank + 0), 0);
-		MakeUnknown(sea, 2, DOUNK_SIMPLE);
-		MakeByte(sea);
-		MakeByte(sea + 1);
-		OpOffEx(sea + 0, 0, REF_HIGH8, base + addr, base, 0);
-		OpOffEx(sea + 1, 0, REF_LOW8, base + addr, base, 0);
-// NEAR
-/*/
 		mea = sea + 1;
 		make_8bit_near_tbl(mea, sea, 0, 0);
-//*/
 		Jump(sea + 2);
 	} else {
 		mea = (sea + eea) / 2;
@@ -1078,38 +1192,77 @@ static make_8bit_near_selection_d_i() {
 	}
 }
 
-static make_8bit_ofs_gb_common(ea,loofs,hiofs) {
-	auto ofs = 0;
-	auto base, addr = Byte(ea + loofs + 1) | (Byte(ea + hiofs + 1) << 8);
-	if(addr < 0x4000)
-		base = MK_FP(AskSelector(GetSegmentAttr(0, SEGATTR_SEL)), 0);
-	else if((addr >=0x8000) && (addr < 0x9800))
-		base = MK_FP(AskSelector(SegByName("CHRRAM")),0);
-	else if((addr >=0x9800) && (addr < 0x9C00))
-		base = MK_FP(AskSelector(SegByName("BGMAP1")),0);
-	else if((addr >=0x9C00) && (addr < 0xA000))
-		base = MK_FP(AskSelector(SegByName("BGMAP2")),0);
-	else if((addr >=0xA000) && (addr < 0xC000))
-		base = MK_FP(AskSelector(SegByName("CRAM")),0);
-	else if((addr >=0xC000) && (addr < 0xD000))
-		base = MK_FP(AskSelector(SegByName("RAM0")),0);
-	else if((addr >=0xD000) && (addr < 0xE000))
-		base = MK_FP(AskSelector(SegByName("RAMB")),0);
-	else if((addr >=0xFE00) && (addr < 0xFEA0))
-		base = MK_FP(AskSelector(SegByName("OAM")),0);
-	else if((addr >=0xFF00) && (addr < 0xFF80))
-		base = MK_FP(AskSelector(SegByName("HWREGS")),0);
-	else if((addr >=0xFF80) && (addr < 0xFFFF))
-		base = MK_FP(AskSelector(SegByName("ZRAM")),0);
-	else if(addr ==0xFFFF)
-		base = MK_FP(AskSelector(SegByName("IENABLE")),0);
-	else {
-		if(ea < 0x4000) {
-			base = MK_FP(AskSelector(AskLong(0, "Enter Bank Nunber")), 0);
-		} else {
-			base = MK_FP(AskSelector(GetSegmentAttr(ea, SEGATTR_SEL)), 0);
+static get_base_nes_common(ea, addr) {
+	auto base = -1;
+	auto segsize, segorg, segbase, segname, segidx;
+	ea = SegStart(ea);
+	segname = SegName(ea);
+	segidx = SegByName(segname);
+	if(segidx == -1) {
+		if(substr(segname,0,4) == "BANK") {
+			segidx = xtol(substr(segname,4,-1)) + 1;
 		}
 	}
+	segbase = MK_FP(AskSelector(segidx),0);
+	segorg = ea - segbase;
+	segsize = SegEnd(ea) - ea;
+	if(addr < 0x6000) {
+		base = MK_FP(AskSelector(0),0);
+	} else if((addr >= segorg) && (addr < (segorg + segsize))) {
+		base = segbase;
+//
+	} else if(addr >= 0xC000) { // CUSTOM
+		base = MK_FP(AskSelector(15 + 1),0);;
+//
+	} else if(addr < 0x8000) {
+		base = MK_FP(AskSelector(0),0);
+	}
+
+//	Message("Seg EA=%08x, BASE=%08x ORG=%04x SIZE=%04x RESULT=%04x\n", ea, segbase, segorg, segsize, base);
+
+	return base;
+}
+
+static get_base_gb_common(ea, addr) {
+	auto base = -1;
+	auto bank = GetReg(ea,"ds");
+	if(addr < 0x4000)
+		base = MK_FP(AskSelector(0), 0);
+	else if((addr >= 0x4000) && (addr < 0x8000)) {
+		if(bank > 0)
+			base = MK_FP(AskSelector(bank), 0);
+//		else
+//			base = MK_FP(AskSelector(AskLong(0, "Enter Bank Number")), 0);
+	} else if((addr >= 0x8000) && (addr < 0x9800))
+		base = MK_FP(AskSelector(SegByName("CHRRAM")),0);
+	else if((addr >= 0x9800) && (addr < 0x9C00))
+		base = MK_FP(AskSelector(SegByName("BGMAP1")),0);
+	else if((addr >= 0x9C00) && (addr < 0xA000))
+		base = MK_FP(AskSelector(SegByName("BGMAP2")),0);
+	else if((addr >= 0xA000) && (addr < 0xC000))
+		base = MK_FP(AskSelector(SegByName("CRAM")),0);
+	else if((addr >= 0xC000) && (addr < 0xD000))
+		base = MK_FP(AskSelector(SegByName("RAM0")),0);
+	else if((addr >= 0xD000) && (addr < 0xE000))
+		base = MK_FP(AskSelector(SegByName("RAMB")),0);
+	else if((addr >= 0xFE00) && (addr < 0xFEA0))
+		base = MK_FP(AskSelector(SegByName("OAM")),0);
+	else if((addr >= 0xFF00) && (addr < 0xFF80))
+		base = MK_FP(AskSelector(SegByName("HWREGS")),0);
+	else if((addr >= 0xFF80) && (addr < 0xFFFF))
+		base = MK_FP(AskSelector(SegByName("ZRAM")),0);
+	else if(addr == 0xFFFF)
+		base = MK_FP(AskSelector(SegByName("IENABLE")),0);
+	return base;
+}
+
+static make_8bit_ofs_gb_common(ea,loofs,hiofs) {
+	auto ofs = 0;
+	auto addr = Byte(ea + loofs + 1) | (Byte(ea + hiofs + 1) << 8);
+	auto base = get_base_gb_common(ea, addr);
+	if ((base == -1)/*||((addr>=0x4000)&&(addr<0x8000))*/)
+		base = MK_FP(AskSelector(AskLong(0, "Enter Bank Number 9")), 0);
+//	base = MK_FP(AskSelector(1), 0);
 //	Message("addr = %08x, base = %08x\n",addr,base);
 	OpOffEx(ea + loofs, 1, REF_LOW8, base + addr - ofs, base, ofs);
 	OpOffEx(ea + hiofs, 1, REF_HIGH8, base + addr - ofs, base, ofs);
@@ -1157,7 +1310,7 @@ static make_8bit_ofs_gb_auto() {
 	auto ofs = 0;
 	auto ea = ScreenEA();
 	auto base, addr;
-	while(sofs < 8) {
+	while(sofs < 10) {
 		if(GetOpType(ea + sofs,0)==1) {
 			if(Byte(ea + sofs)==0xCE)
 				hiofs = sofs;
@@ -1337,7 +1490,7 @@ static auto_array() {
 //	Message("start ea %08x", ea);
 	do {
 		auto flags = GetFlags(ea + i);
-		auto stop = isUnknown(flags) && !isRef(flags);
+		auto stop = isUnknown(flags) && !isRef(flags) && !hasName(flags);
 		i++;
 	} while ((flags != 0) && (stop));
 	i=i-1;
@@ -1353,14 +1506,27 @@ static auto_array() {
 }
 
 static ptr_table(ea, docode) {
-	auto i = 0, w0, stop = 0;
-	auto base = MK_FP(AskSelector(GetSegmentAttr(ea, SEGATTR_SEL)), 0);
+	auto base, i = 0, w0, stop = 0, defbase = -1;
 	do {
 		if(((i&1)==0)&&(!stop)){
-			MakeUnknown(ea+i, 2, DOUNK_SIMPLE);
-			MakeWord(ea+i);
-			w0=Word(ea+i);
-			OpOffEx(ea+i, 0, REF_OFF16, -1, base, 0);
+			MakeUnknown(ea + i, 2, DOUNK_SIMPLE);
+			MakeWord(ea + i);
+			w0 = Word(ea + i);
+
+			if((w0 != 0) && (w0 != 0xFFFF)) {
+				if(SegByName(form("ROM%X",0))!=BADADDR)	// GB mode
+					base = get_base_gb_common(ea, w0);
+				else
+					base = get_base_nes_common(ea, w0);
+				if(base == -1) {
+					if(defbase == -1) {
+						base = MK_FP(AskSelector(AskLong(0, form("Enter Bank Number at 0x%08X",ea))), 0);
+						defbase = base;
+					} else
+						base = defbase;
+				}
+				OpOffEx(ea + i, 0, REF_OFF16, -1, base, 0);
+			}
 			if(docode) {
 				make_code(base+w0);
 				AutoMark(base+w0, AU_CODE);
@@ -1371,10 +1537,11 @@ static ptr_table(ea, docode) {
 		i = i + 2;
 		stop = isRef(GetFlags(ea + i)) | isRef(GetFlags(ea + i + 1));	// assume the first offset always present, no need to stop here
 	} while (!stop && (i < 0x10000));
+	return ea + i;
 }
 
 static auto_ptr_table() {
-	ptr_table(ScreenEA(),0);
+	Jump(ptr_table(ScreenEA(),0));
 }
 
 static far_ptr(ea, bofs, wofs, op, opofs) {
@@ -1394,8 +1561,8 @@ static far_ptr(ea, bofs, wofs, op, opofs) {
 		else if((ofs>=0xFF00)&&(ofs<=0xFF7F))
 			base = MK_FP(AskSelector(SegByName("HWREGS")),0);
 		else {
-			if(bofs==-1)
-				base = MK_FP(AskSelector(GetReg(ea,"ds")), 0);
+			if(bofs < 0)
+				base = MK_FP(AskSelector(/*GetReg(ea,"ds")*/0-bofs), 0);
 			else
 				base = MK_FP(AskSelector(Byte(ea + bofs)), 0);
 		}
@@ -1410,8 +1577,8 @@ static far_ptr_code(ea, bofs, wofs, op, opofs) {
 	if(ofs<0x4000)
 		base = MK_FP(AskSelector(0), 0);
 	else {
-		if(bofs==-1)
-			base = MK_FP(AskSelector(GetReg(ea,"ds")), 0);
+		if(bofs<0)
+			base = MK_FP(AskSelector(/*GetReg(ea,"ds")*/0-bofs), 0);
 		else
 			base = MK_FP(AskSelector(Byte(ea + bofs)), 0);
 	}
@@ -1512,8 +1679,8 @@ static auto_rename_ptrs() {
 //	auto segorg = getSegOrg(bank);
 	auto segsize = getSegSize(bank);
 	auto name_mask = AskStr("", "Enter Name Mask");
-	auto index_start = AskLong("", "Enter Start Index");
-	auto index_increment = AskLong("", "Enter Index Increment");
+	auto index_start = AskLong(0, "Enter Start Index 11");
+	auto index_increment = AskLong(1, "Enter Index Increment 12");
 	auto i = index_start;
 	while(sea < eea) {
 		auto ofs = Word(sea);
@@ -1530,7 +1697,7 @@ static auto_rename_ptrs() {
 					MakeNameEx(0+ofs,nname,SN_CHECK|SN_NOWARN);
 				} else if(ofs<0x8000){
 					if(extbank==-1) {
-						extbank = AskLong(1, "Enter External Bank");
+						extbank = AskLong(1, "Enter External Bank 13");
 						extbase = MK_FP(AskSelector(extbank), 0);
 					}
 					MakeNameEx(extbase+ofs,nname,SN_CHECK|SN_NOWARN);
@@ -1549,7 +1716,7 @@ static auto_rename_ptrs() {
 				} else {
 					if(ofs<0xC000) {
 						if(extbank==-1) {
-							extbank = AskLong(1, "Enter External Bank");
+							extbank = AskLong(1, "Enter External Bank 14");
 							extbase = MK_FP(AskSelector(extbank+1), 0);
 						}
 						MakeNameEx(extbase+ofs,nname,SN_CHECK|SN_NOWARN);
@@ -1559,7 +1726,7 @@ static auto_rename_ptrs() {
 						MakeNameEx(MK_FP(AskSelector(16), 0)+ofs,nname,SN_CHECK|SN_NOWARN);
 					}
 				}
-			} else if(segsize == 0x4000) {				// NES mode (8x16k banks)
+			} else if(segsize == 0x4000) {		// NES mode (8x16k banks)
 				if(bank<8){
 					if(ofs<0xC000) {
 						MakeNameEx(base+ofs,nname,SN_CHECK|SN_NOWARN);
@@ -1569,7 +1736,7 @@ static auto_rename_ptrs() {
 				} else {
 					if(ofs<0xC000) {
 						if(extbank==-1) {
-							extbank = AskLong(1, "Enter External Bank");
+							extbank = AskLong(1, "Enter External Bank 15");
 							extbase = MK_FP(AskSelector(extbank+1), 0);
 						}
 						MakeNameEx(extbase+ofs,nname,SN_CHECK|SN_NOWARN);
@@ -1588,34 +1755,25 @@ static auto_rename_ptrs() {
 }
 
 // garbage labels collector
-static garbage_search(loc) {
-	auto ea = 0;
-	while ((ea = FindText(ea,SEARCH_DOWN|SEARCH_REGEX,1,0,loc)) != BADADDR) {
+static garbage_search(ea) {
+	auto /*ea = 0, */count = 0;
+	auto flags = GetFlags(ea);
+	if( flags & (FF_LABL/*|FF_NAME*/)) {
 		if((RfirstB0(ea)==-1)&&(DfirstB(ea)==-1)) {
 			Message(">no ref label '%s' at 0x%08x deleted\n", Name(ea), ea);
 			MakeName(ea, "");
+			count = 1;
 		}
-//		else
-//			Message(">ref label '%s' at 0x%08x\n", Name(ea), ea);
-		ea = NextHead(ea, -1);
 	}
+	return count;
 }
 
 static garbage_collector(void) {
+	auto ea = 0;
 	Message("garbage collector start\n");
-
-	garbage_search("loc_.*:");
-	garbage_search("unk_.*:");
-	garbage_search("byte_.*:");
-	garbage_search("word_.*:");
-	garbage_search("off_.*:");
-	garbage_search("_jloc.*:");
-	garbage_search("_j_prg.*:");
-	garbage_search("_j_j_.*:");
-	garbage_search("_jsub.*:");
-	garbage_search("_far.*:");
-	garbage_search("_mmc.*:");
-	garbage_search("_msg.*:");
-
+	garbage_search(ea);
+	while ((ea = NextAddr(ea)) != BADADDR) {
+		garbage_search(ea);
+	}
 	Message("garbage collector done\n");
 }

@@ -5,7 +5,7 @@
 //#define DEBUG
 //#define MARK_UNUSED
 #define MARK_NEW
-//#define MAKE_MORE_OFFSETS
+#define MAKE_MORE_OFFSETS
 
 static code_patterns(void) {
 	auto cnt;
@@ -71,7 +71,7 @@ static main(void) {
 		i = 0;
 		do {
 			segeai = segea + i;
-			if((segeai & 0xFFFF) == 0)Message(".", segeai);
+			if((segeai & 0xFFFF) == 0)Message(".");
 
 //  Exec68k = 0x01
 //  Data68k = 0x04
@@ -98,8 +98,8 @@ static main(void) {
 					cmt = cmt + "(d)";
 				if(!isCode(GetFlags(segeai)))
 					MakeCode(segeai);
-				codelog++;
 				auto add = ItemSize(segeai) - 1;
+				codelog = codelog + add;
 				i = i + add;
 				fseek(cdlFile, add, 1);
 				MakeComm(segeai, "");
@@ -135,19 +135,45 @@ static main(void) {
 #ifdef MAKE_MORE_OFFSETS
 			if(isCode(GetFlags(segeai))) {
 				auto opc = Word(segeai);
-				auto ofs = Word(segeai + 2);
-				if(    (ofs > 0x2000) &&
-					  ((opc == 0x33FC)||
-				       (opc == 0x3A3C)||
-				       (opc == 0x3B7C)||
-				       (opc == 0x2A3C)||
-				       (opc == 0x41F9)||
-				       (opc == 0x2C3C)||
-				       (opc == 0x49F9)||
-				       (opc == 0x3E3C)||
-				       (opc == 0x3CFC)||
-				       (opc == 0x207C)||
-				       (opc == 0x23FC)) ) {
+				if( ((opc & 0xFFF0) == 0x4E40) ) {
+					auto ofs = Dword(0x80 + ((opc & 0xF) * 4));
+					SetManualInsn(segeai, form("TRAP    %s", Name(ofs)));
+					AddCodeXref(segeai, ofs, fl_CF|XREF_USER);
+				}
+//				auto ofs = Word(segeai + 2);
+				if((/*ofs > 0x200*/1) && (
+					(opc == 0x207C)||	// 32bit operands! does not work here properly
+					(opc == 0x217C)||
+					(opc == 0x21FC)||
+					(opc == 0x227C)||
+					(opc == 0x23FC)||
+					(opc == 0x2A3C)||
+					(opc == 0x2C3C)||	// to here for low addresses
+					(opc == 0x30BC)||
+					(opc == 0x30FC)||
+					(opc == 0x317C)||
+					(opc == 0x32BC)||
+					(opc == 0x32FC)||
+					(opc == 0x34BC)||
+					(opc == 0x34FC)||
+					(opc == 0x36BC)||
+					(opc == 0x36FC)||
+					(opc == 0x38BC)||
+					(opc == 0x38FC)||
+					(opc == 0x3A3C)||
+					(opc == 0x3B7C)||
+					(opc == 0x3CBC)||
+					(opc == 0x3CFC)||
+					(opc == 0x3D7C)||
+					(opc == 0x3E3C)||
+					(opc == 0x41F8)||
+					(opc == 0x41F9)||
+					(opc == 0x43F8)||
+					(opc == 0x45F8)||
+					(opc == 0x45F9)||
+					(opc == 0x49F9)||
+					(opc == 0x4BF8)||
+				(0))) {
 #ifdef DEBUG
 					Message("   offs at 0x%08x to 0x%08x\n", segeai, Dword(segeai + 2));
 #endif
@@ -158,6 +184,8 @@ static main(void) {
 			i++;
 		} while (i < segsize);
 	}
+
+	garbage_collector();
 
 	Message("\nScript completed, summary:\n");
 	Message("\tCODE bytes:\t0x%x\n",codelog);

@@ -113,29 +113,67 @@ static make_near_ofs16_snes(ea, bank, name) {
 }
 
 static auto_far_ofs16_snes() {
-//	Jump(make_far_ofs16_snes(ScreenEA(), 0, 2, 3, ""));	// wofs, bofs, size
-
-///*
-	auto ea = ScreenEA();
-	auto size = 2;
-	make_far_ofs16_snes(ea, 0, 2, 3, "");
-	make_data_array(ea + 2, size, "");
-	Jump(ea + size + 2);//*/
+	Jump(make_far_ofs16_snes(ScreenEA(), 0, 2, 3, ""));	// wofs, bofs, size
 
 /*
+	auto ea = ScreenEA(),cnt,i;
+	auto ofs0 = Word(ea) + ((Byte(ea + 2) | 0x80) << 16),ofs1,ofs2,ofs3;
+//	Message("ofs0=%08X\n",ofs0);
+		if(Byte(ofs0 + 6) < 4)
+			cnt = 1;
+		else
+			cnt = 2;
+		ofs1 = Word(ofs0) + (ofs0 & 0xFF0000);
+//		Message(" ofs1=%08X\n",ofs1);
+		ofs2 = Word(ofs1) + (ofs1 & 0xFF0000);
+//		Message("  ofs2=%08X\n",ofs2);
+		for(i = 0; i < cnt; i++)
+			ofs1 = make_near_ofs16_snes(ofs1, -1, "");
+		while(Word(ofs2) != 0xFFFF) {
+			ofs2 = make_data_array(ofs2, 2, "");
+			ofs3 = Word(ofs2) + ((Byte(ofs2 + 2) | 0x80) << 16);
+			make_code(ofs3);
+			ofs2 = make_far_ofs16_snes(ofs2, 0, 2, 10, "");
+//			Message("   ofs3=%08X\n",ofs2);
+		}
+		ofs2 = make_data_array(ofs2, 2, "");
+		ofs0 = make_near_ofs16_snes(ofs0, -1, "");
+		ofs0 = make_near_ofs16_snes(ofs0, -1, "");
+		ofs1 = Word(ofs0) + (ofs0 & 0xFF0000);
+		for(i = 0; i < cnt; i++)
+			ofs1 = make_near_ofs16_snes(ofs1, -1, "");
+		ofs0 = make_near_ofs16_snes(ofs0, -1, "");
+		ofs0 = make_data_array(ofs0, 2, "");
+	Jump(ea + 3);//*/
+/*
 	auto ea = ScreenEA();
-	auto size = 10;
+	auto size = 4;
 	make_data_array(ea, 6, "");
 	make_far_ofs16_snes(ea + 6, 0, 2, 3, "");
 	make_data_array(ea + 8, 2, "");
 	Jump(ea + size);//*/
+/*
+	auto ea = ScreenEA();
+	MakeUnknown(ea, 4, DOUNK_SIMPLE);
+	MakeByte(ea);
+	MakeWord(ea + 1);
+	MakeByte(ea + 3);
+	OpOffEx(ea + 1, 0, REF_OFF16|REFINFO_NOBASE, -1, Byte(ea) << 16, 0);
+	Jump(ea + 4);
 
-/*	auto ea = ScreenEA();
-	MakeUnknown(ea, 2, DOUNK_SIMPLE);
+/*
+	auto ea = ScreenEA();
+	auto ofs = Word(ea) + 0x8000;
+	auto bank = (ea & 0xFF0000) >> 16;
+	auto base = (Word(ea + 2) + bank ) << 16;
+	auto ptr = ofs + base;
+	MakeUnknown(ea, 4, DOUNK_SIMPLE);
 	MakeWord(ea);
-	ea = ea + 2;
-	ea = make_far_ofs16_snes(ea, 0, 2, 3, "");
-	Jump(ea + 2); //*/
+	MakeWord(ea + 2);
+	OpOffEx(ea, 0, REF_OFF16|REFINFO_NOBASE, -1, base + 0x8000, 0);
+//	Message(form("_res%02X_%03X\n", bank, (ea & 0x7FFF) >> 2));
+	MakeName(ptr, form("_res%02X_%03X", bank, (ea & 0x7FFF) >> 2));
+	Jump(ea + 4); //*/
 
 }
 
@@ -222,6 +260,7 @@ static custom_params4(ea) {
 static custom_params5(ea) {
 	MakeUnknown(ea, 10, DOUNK_SIMPLE);
 	auto base = Byte(ea + 1) << 16;
+	MakeCode(ea);
 	AutoMark(ea, AU_CODE);
 	Wait();
 	OpOffEx(ea + 5, 0, REF_OFF16, -1, base, 0);
@@ -236,18 +275,31 @@ static custom_mvn_copy(ea) {
 }
 
 static custom_far_args(ea) {
-	auto bofs = 8;
-	auto wofs = 0;
-//	MakeUnknown(ea, 12, DOUNK_SIMPLE);
+	auto bofs = 4;
+	auto wofs = 1;
 	auto byte = Byte(ea + bofs);
-	auto word = Word(ea + wofs + 1);
-	if((byte >= 0x80) && (word >= 0x8000)) {
-		auto base = (0x80|byte) << 16;
-		MakeCode(ea);
-		AutoMark(ea, AU_CODE);
-		Wait();
-		OpOffEx(ea + wofs, 0, REF_OFF16, -1, base, 0);
-	}
+	auto base = (0x80|byte) << 16;
+	make_code(ea);
+	OpOffEx(ea + wofs - 1, 0, REF_OFF16, -1, base, 0);
+}
+
+static custom_args_code(ea) {
+	auto wofs = 1;
+	auto base = ea & 0xFF0000;
+	auto ofs = Word(ea + wofs) | base;
+	make_code(ea);
+	make_code(ofs);
+	OpOffEx(ea + wofs - 1, 0, REF_OFF16, -1, base, 0);
+}
+
+static custom_far_args_code(ea) {
+	auto bofs = 4;
+	auto wofs = 1;
+	auto base = (Byte(ea + bofs)|0x80)<<16;
+	auto ofs = Word(ea + wofs) | base;
+	make_code(ea);
+	make_code(ofs);
+	OpOffEx(ea + wofs - 1, 0, REF_OFF16, -1, base, 0);
 }
 
 static custom_params_scw3_far_param4(ea) {
@@ -275,7 +327,7 @@ static far_sys_call_search_customA(pat, instr) {
 		temp2 = (Word(temp1) + 1) | (Byte(temp1 + 2) << 16);
 		Message(" idx=%04x, ofs=%08x, ptr=%08x, name=%s\n", temp0, temp1, temp2, Name(temp2) );
 		MakeUnknown(ea, 3, DOUNK_SIMPLE);
-		MakeCode(ea);
+		Make_codeCode(ea);
 		SetManualInsn(ea, form(instr, Name(temp2)));
 		make_data_array(ea + 3, ((strlen(pat) + 1) / 3) - 3, "");
 		SetManualInsn(ea + 3, "ENDM");
@@ -285,7 +337,15 @@ static far_sys_call_search_customA(pat, instr) {
 
 static auto_custom_array() {
 	auto ea = ScreenEA(), ofs, tmp0, tmp1, tmp2, tmp3, tmp4, tmp5, tmpstr = "", stop = 0, str, size, i;
-//	parametric_fixsize("A9 ?? ?? A2 ?? 00 22 ?? ?? ??", -1, "", custom_far_args);
+
+//	parametric_fixsize("A0 ?? ?? A9 ?? 00 84 ?? 85 ?? 22 DA 94 01", -1, "", custom_far_args);
+//	parametric_fixsize("A0 ?? ?? A9 ?? 00 84 ?? 85 ?? A0 ?? ?? 22 69 9F 01", -1, "", custom_far_args);
+//
+//	parametric_fixsize("A0 ?? ?? A9 ?? 22 D8 86 01", -1, "", custom_far_args_code);
+//	parametric_fixsize("A0 ?? ?? A9 ?? 22 E9 86 01", -1, "", custom_far_args_code);
+//	parametric_fixsize("A0 ?? ?? A9 ?? 22 FA 86 01", -1, "", custom_far_args_code);
+//	parametric_fixsize("A9 ?? ?? 9D 03 00 6B", -1, "", custom_args_code);
+
 //	parametric_fixsize("A9 ?? ?? A0 ?? 00 22 ?? ?? ??", -1, "", custom_far_args);
 //	parametric_fixsize("A2 ?? ?? A0 ?? ?? A9 ?? ?? 54 ?? ??", -1, "", custom_mvn_copy);
 
@@ -503,7 +563,7 @@ static auto_custom_array() {
 //	make_data_array(ea + 4, 4, "");
 //	Jump(ea + 8);
 
-///*
+/*
 	while(Word(ea) != 0xFFFF) {
 //		Message("block start 0x%06X\n",ea);
 		MakeUnknown(ea, 2, DOUNK_SIMPLE);
@@ -529,6 +589,12 @@ static auto_custom_array() {
 	MakeUnknown(ea, 2, DOUNK_SIMPLE);
 	MakeWord(ea);
 //*/
+	tmp0 = Dword(ea);
+	MakeUnknown(ea, 4, DOUNK_SIMPLE);
+	MakeDword(ea);
+	if((tmp0!=0)&&((tmp0&0x00FFFFFF)<0x80000))
+		OpOffEx(ea, 0, REF_OFF32|REFINFO_NOBASE, -1, (-(tmp0 & 0xFF000000) & 0xFF000000), 0);
+	Jump(ea + 4);
 } // SHIFT-C
 
 static make_string(ea) {
@@ -587,6 +653,7 @@ static make_tbl16_snes(ea, docode) {
 			stop=(isRef(tmpp));
 		}
 	} while (!stop && (i < 0x10000));
+	Jump(ea + i);
 }
 
 static make_tbl16_gen(ea, docode) {
@@ -636,7 +703,7 @@ static make_tbl32_gen(ea, docode) {
 		       isRef(GetFlags(ea + i + 2)) |
 		       isRef(GetFlags(ea + i + 3));	// assume the first offset always present, no need to stop here
 	} while (!stop && (i < segsize));
-//	Jump(ea + i);
+	Jump(ea + i);
 }
 
 static auto_tbl32_gen() {
@@ -721,7 +788,7 @@ static make_data_array(ea, len, cmt) {
 
 static make_code(ea) {
 	auto len = 2;
-	while((MakeCode(ea)==0)&&(len<4)) {
+	while((MakeCode(ea)==0)&&(len<6)) {
 		MakeUnknown(ea, len, DOUNK_SIMPLE);
 		len++;
 	}
@@ -751,35 +818,25 @@ static auto_array() {
 }
 
 // garbage labels collector
-static garbage_search(loc) {
-	auto ea = 0;
-	while ((ea = FindText(ea,SEARCH_DOWN|SEARCH_REGEX,1,0,loc)) != BADADDR) {
+static garbage_search(ea) {
+	auto /*ea = 0, */count = 0;
+	auto flags = GetFlags(ea);
+	if( flags & (FF_LABL/*|FF_NAME*/)) {
 		if((RfirstB0(ea)==-1)&&(DfirstB(ea)==-1)) {
 			Message(">no ref label '%s' at 0x%08x deleted\n", Name(ea), ea);
 			MakeName(ea, "");
+			count = 1;
 		}
-//		else
-//			Message(">ref label '%s' at 0x%08x\n", Name(ea), ea);
-		ea = NextHead(ea, -1);
 	}
+	return count;
 }
 
 static garbage_collector(void) {
+	auto ea = 0;
 	Message("garbage collector start\n");
-
-	garbage_search("loc_.*:");
-	garbage_search("unk_.*:");
-	garbage_search("byte_.*:");
-	garbage_search("word_.*:");
-	garbage_search("off_.*:");
-	garbage_search("a.*:");
-//	garbage_search("_jloc.*:");
-//	garbage_search("_j_prg.*:");
-//	garbage_search("_j_j_.*:");
-//	garbage_search("_jsub.*:");
-//	garbage_search("_far.*:");
-//	garbage_search("_mmc.*:");
-//	garbage_search("_msg.*:");
-
+	garbage_search(ea);
+	while ((ea = NextAddr(ea)) != BADADDR) {
+		garbage_search(ea);
+	}
 	Message("garbage collector done\n");
 }

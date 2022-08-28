@@ -3,9 +3,10 @@
 #include <functions.idc>
 
 #define DEBUG
-#define SHOW_CORRUPT
+#define DO_CODE
+//#define SHOW_CORRUPT
 //#define SHOW_UPDATES
-//#define DATA_CODE_REGS_FROM_CDL
+#define DATA_CODE_REGS_FROM_CDL
 
 static fread_str(handle, start, size) {
 	auto i, ret = "";
@@ -99,6 +100,10 @@ static main(void) {
 	while (SegByName(form(".%02X",cart_mode|banksnum)) != -1) {banksnum++;}
 
 	Message("Total Banks: %d\n", banksnum);
+	auto bar = "";
+	for(i=0; i<banksnum / 2; i++)
+		bar = bar + "_";
+	Message("%s\n", bar);
 
 	while (segcounter < banksnum) {
 		auto segname = form(".%02X",cart_mode|segcounter);
@@ -108,14 +113,16 @@ static main(void) {
 		if(secondpass==0) {
 #ifdef DEBUG
 			Message("DEBUG: name='.%02X', SegByName=%02X, SegByBase=0x%08X cdlpos=%08X\n",cart_mode|segcounter, seg, segea, cdlROMOfs);
+#else
+//			Message("Seg %s start pass %d", segname, secondpass);
+			if(segcounter & 1)Message(".");
 #endif
-			Message("Seg %s start pass %d", segname, secondpass);
 		}
-		else
-			Message(" %d", secondpass);
+//		else
+//			Message(" %d", secondpass);
 
 		i = 0;
-		auto last_seg_B = -1;
+		auto last_seg_B = -1, prev_i = -1;
 
 //	work here
 		do {
@@ -123,6 +130,7 @@ static main(void) {
 			if(secondpass == 0) {
 				// FIRST PASS START
 				if(cdlFileOpened == 1) {
+//					while(prev_i != i){ prev_i = prev_i + 1; cd = fgetc(cdlFile); }
 					fseek(cdlFile, cdlROMOfs + i, 0);
 					cd = fgetc(cdlFile);
 				} else
@@ -132,7 +140,7 @@ static main(void) {
 
 #ifdef SHOW_UPDATES
 				auto tmpcmt = CommentEx(segeai,0);
-				if((tmpcmt[0]=="-") || (strstr(tmpcmt,"   -") != -1)) {
+				if(((tmpcmt[0]=="-") || (strstr(tmpcmt,"   -") != -1)) && (cd != 0)) {
 					MakeComm(segeai, "");
 					update = "new ";
 				}
@@ -142,23 +150,21 @@ static main(void) {
 
 //				if (cd) cmt = form("cdl: %02X [ ", cd);
 
-				auto DS,D,B,x,m;
+				auto DS,D,B,x,m,xR,mR;
 
 				if(cd & 1) {
 
 					x = (cd >> 4) & 1;
 					m = (cd >> 5) & 1;
 
+#ifdef DEBUG
+					xR = GetReg(segeai, "i");
+					mR = GetReg(segeai, "m");
+#endif
+
 #ifdef DATA_CODE_REGS_FROM_CDL
 					SetReg(segeai, "i", x);
 					SetReg(segeai, "m", m);
-#endif
-
-// CHOOSE WISELY!
-//					SetReg(segeai, "B", cart_mode|segcounter);
-//					SetReg(segeai, "B", 0x7E);
-//					SetReg(segeai, "D", 0);
-
 					if(cdlDirectPageOfs != -1) {
 						fseek(cdlFile, cdlDirectPageOfs + (i * 2), 0);
 						D = readshort(cdlFile, 0);
@@ -171,52 +177,67 @@ static main(void) {
 						SetReg(segeai, "B", B);
 						SetReg(segeai, "DS", B << 12);
 					}
+#endif
+
+// CHOOSE WISELY!
+//					SetReg(segeai, "B", cart_mode|segcounter);
+//					SetReg(segeai, "B", 0x7E);
+//					SetReg(segeai, "D", 0);
+
 #ifdef SHOW_CORRUPT
 					if(cd & 6) {
-						update = form("corrupt %02X ",cd & 6);
+						update = update + form("corrupt %02X ",cd & 6);
 					}
 #endif
 #ifdef DEBUG
 					D = GetReg(segeai, "D");
 					B = GetReg(segeai, "B");
 
-					MakeComm(segeai, form("%sopc-.D%04X.B%02X.I%s.A%s",update,D,B,x?"8 ":"16", m?"8 ":"16"));
+					if((x!=xR)||(m!=mR))
+						MakeComm(segeai, form("%sopc-.D%04X.B%02X[CDL.I%s.A%s][IDB.I%s.A%s]",update,D,B,x?"8 ":"16", m?"8 ":"16",xR?"8 ":"16", mR?"8 ":"16"));
+					else
+						MakeComm(segeai, form("%sopc-.D%04X.B%02X.I%s.A%s",update,D,B,x?"8 ":"16", m?"8 ":"16"));
 #else
 					MakeComm(segeai, form("%sopc",update));
 #endif
+#ifdef DO_CODE
 					MakeCode(segeai);
-
+#endif
 					i = i + (ItemSize(segeai) - 1);
-
 					codelog++;
 				} else if(cd & 4) {
 #ifdef SHOW_CORRUPT
 					if(cd & 3) {
-						update = "corrupt ";
+						update = update + "corrupt ";
 					}
 #endif
-					MakeComm(segeai, form("%sdat",update));
+#ifdef DEBUG
+					D = GetReg(segeai, "D");
+					B = GetReg(segeai, "B");
+					x = GetReg(segeai, "i");
+					m = GetReg(segeai, "m");
+					MakeComm(segeai, form("%sdat-.D%04X.B%02X.I%s.A%s",update,D,B,x?"8 ":"16", m?"8 ":"16"));
+#else
+					MakeComm(segeai, form("%sdat-",update));
+#endif
 					datalog++;
 				} else if(cd & 8) {
-					MakeComm(segeai, form("%sdma",update));
+					MakeComm(segeai, form("%sdma-",update));
 					datalog++;
 				} else {
 #ifdef SHOW_CORRUPT
 					if(cd & 2) {
-						update = "corrupt ";
+						update = update + "corrupt ";
 					}
 #endif
 #ifdef DEBUG
-					if(isCode(GetFlags(segeai))) {
-						D = GetReg(segeai, "D");
-						B = GetReg(segeai, "B");
-						x = GetReg(segeai, "i");
-						m = GetReg(segeai, "m");
-						MakeComm(segeai, form("%s  -*.D%04X.B%02X.I%s.A%s",update,D,B,x?"8 ":"16", m?"8 ":"16"));
-					} else
-						MakeComm(segeai, form("%s-*",update));
+					D = GetReg(segeai, "D");
+					B = GetReg(segeai, "B");
+					x = GetReg(segeai, "i");
+					m = GetReg(segeai, "m");
+					MakeComm(segeai, form("   -*.D%04X.B%02X.I%s.A%s",D,B,x?"8 ":"16", m?"8 ":"16"));
 #else
-					MakeComm(segeai, form("%s-*",update));
+					MakeComm(segeai, "-*");
 #endif
 					unusedlog++;
 				}
@@ -233,9 +254,11 @@ static main(void) {
 		cdlDirectPageOfs = cdlDirectPageOfs + (segsize * 2);
 		cdlDataBankOfs = cdlDataBankOfs + segsize;
 		segcounter++;
-		Message("\n");
+//		Message("\n");
 
 	}	// while (SegByName(form(".%02X",0x80|seg) != -1)
+
+	garbage_collector();
 
 	Message("\nScript completed, summary:\n");
 	Message("\tCODE bytes:\t0x%06x\n",codelog);

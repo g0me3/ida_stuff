@@ -141,6 +141,9 @@ static main(void)
 	AddHotkey("Shift-J", "make_8bit_ofs_selection6_i");		// --//-- hi/lo inverse order
 	AddHotkey("Shift-M", "make_8bit_far_ofs_selection6");	// --//-- far manual bank request
 
+	AddHotkey("Shift-I", "make_8bit_ofs_selection7");		// --//-- 6 bytes gap
+	AddHotkey("Shift-K", "make_8bit_ofs_selection7_i");		// --//-- hi/lo inverse order
+
 	AddHotkey("Shift-Z", "auto_array");						// auto convert unexplored area to byte array, auto search of next area from cursor
 	AddHotkey("Shift-X", "auto_ptr_table");
 	AddHotkey("Shift-V", "auto_far_ptr");
@@ -150,24 +153,44 @@ static main(void)
 	AddHotkey("Shift-8", "garbage_collector");
 
 	DelHotkey("Shift-1");
+	Wait();
 	AddHotkey("Shift-1", "make_8bit_ofs_gb_auto");
+	Wait();
 	DelHotkey("Shift-2");
+	Wait();
 	AddHotkey("Shift-2", "make_8bit_ofs_gb_2");
+	Wait();
 	DelHotkey("Shift-3");
+	Wait();
 	AddHotkey("Shift-3", "make_8bit_ofs_gb_3");				// default IDA's shortcut for OpNumber is '#', which is converted to Shift-3 automatically, be careful dammit!
+	Wait();
 	DelHotkey("Shift-4");
+	Wait();
 	AddHotkey("Shift-4", "make_8bit_ofs_gb_4");
+	Wait();
 	DelHotkey("Shift-5");
+	Wait();
 	AddHotkey("Shift-5", "make_8bit_ofs_gb_5");
+	Wait();
 	DelHotkey("Shift-6");
+	Wait();
 	AddHotkey("Shift-6", "make_8bit_ofs_gb_6");
+	Wait();
 	DelHotkey("Shift-F2");
+	Wait();
 	AddHotkey("Shift-F2", "make_8bit_ofs_gb_2_i");
+	Wait();
 	DelHotkey("Shift-F3");
+	Wait();
 	AddHotkey("Shift-F3", "make_8bit_ofs_gb_3_i");				// default IDA's shortcut for OpNumber is '#', which is converted to Shift-3 automatically, be careful dammit!
+	Wait();
 	DelHotkey("Shift-F4");
+	Wait();
 	AddHotkey("Shift-F4", "make_8bit_ofs_gb_4_i");
+	Wait();
 	DelHotkey("Shift-F5");
+	Wait();
 	AddHotkey("Shift-F5", "make_8bit_ofs_gb_5_i");
+	Wait();
 
 }

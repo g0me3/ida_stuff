@@ -3,13 +3,14 @@
 #include <functions.idc>
 
 // ======main control flags=======
-//#define START_MAKE_CODE_EA 0x100
+//#define DEBUG
 
 #define MAKE_CODE
 #define MAKE_OFFSETS
-	#define FORBID_OFFSETS_BC
-	#define FORBID_OFFSETS_DE
-	#define FORBID_OFFSETS_HL
+#define MAKE_NAMES
+//	#define FORBID_OFFSETS_BC
+//	#define FORBID_OFFSETS_DE
+//	#define FORBID_OFFSETS_HL
 //#define MAKE_CODE_UNK
 //#define MAKE_CODE_UNK_BYTE
 //#define MAKE_DATA_BYTE
@@ -19,18 +20,20 @@
 #define MMC_PRG_PROC_DETECT
 #define SWITCH_DETECT_A
 #define SWITCH_DETECT_B
-//#define MMC_DEFAULT_BANK 1
+#define MMC_DEFAULT_BANK 1
+#define MMC_DEFAULT_BANK_CALL 1
 
 // ========MMC control values========
 #define PRG_CMD_SIZE 10
 
-#define MMC_SET_OFS0 0x021E
-//#define MMC_SET_OFS1 0x9DF
-//#define MMC_RESTORE_OFS 0x051F
+//#define MMC_SET_OFS0 0x0D1D
+//#define MMC_SET_OFS1 0x0189
+//#define MMC_RESTORE0_OFS 0x0D17
+//#define MMC_RESTORE1_OFS 0x0308
 
-//#define MMC_SET_OPC0 0xCF
-//#define MMC_SET_OPC1 0xFF
-//#define MMC_RESTORE_OPC 0xCF
+#define MMC_SET_OPC0 0xEF
+//#define MMC_SET_OPC1 0xCF
+#define MMC_RESTORE_OPC 0xF7
 
 //#define MMC_PRG1_OPC 0xF7
 //#define MMC_PRG2_OPC 0xC7
@@ -41,31 +44,32 @@
 //#define MMC_PRG7_OPC 0xC7
 //#define MMC_PRGF_OPC 0xCF
 
-//#define MMC_PRG1_PROC 0x332
-//#define MMC_PRG2_PROC 0x33F
-//#define MMC_PRG3_PROC MMC_PRG2_PROC+5
-//#define MMC_PRG4_PROC MMC_PRG3_PROC+5
-//#define MMC_PRG5_PROC MMC_PRG4_PROC+5
-//#define MMC_PRG6_PROC MMC_PRG5_PROC+5
-//#define MMC_PRG7_PROC MMC_PRG6_PROC+5
-//#define MMC_PRG8_PROC MMC_PRG7_PROC+5
-//#define MMC_PRG9_PROC MMC_PRG8_PROC+5
-//#define MMC_PRGA_PROC MMC_PRG9_PROC+5
-//#define MMC_PRGB_PROC MMC_PRGA_PROC+5
-//#define MMC_PRGC_PROC MMC_PRGB_PROC+5
-//#define MMC_PRGD_PROC MMC_PRGC_PROC+5
-//#define MMC_PRGE_PROC MMC_PRGD_PROC+5
-//#define MMC_PRGF_PROC MMC_PRGE_PROC+5
+//#define MMC_PRG_INCREMENT 5
+//#define MMC_PRG1_PROC 0x3FD9
+//#define MMC_PRG2_PROC 0x0AAC //MMC_PRG1_PROC+MMC_PRG_INCREMENT
+//#define MMC_PRG3_PROC 0x3FEB //MMC_PRG2_PROC+MMC_PRG_INCREMENT
+//#define MMC_PRG4_PROC 0x3FAD //MMC_PRG3_PROC+MMC_PRG_INCREMENT
+//#define MMC_PRG5_PROC 0x3FA4 //MMC_PRG4_PROC+MMC_PRG_INCREMENT
+//#define MMC_PRG6_PROC 0x3F9B //MMC_PRG5_PROC+MMC_PRG_INCREMENT
+//#define MMC_PRG7_PROC 0x3F92 //MMC_PRG6_PROC+MMC_PRG_INCREMENT
+//#define MMC_PRG8_PROC MMC_PRG7_PROC+MMC_PRG_INCREMENT
+//#define MMC_PRG9_PROC MMC_PRG8_PROC+MMC_PRG_INCREMENT
+//#define MMC_PRGA_PROC MMC_PRG9_PROC+MMC_PRG_INCREMENT
+//#define MMC_PRGB_PROC MMC_PRGA_PROC+MMC_PRG_INCREMENT
+//#define MMC_PRGC_PROC MMC_PRGB_PROC+MMC_PRG_INCREMENT
+//#define MMC_PRGD_PROC MMC_PRGC_PROC+MMC_PRG_INCREMENT
+//#define MMC_PRGE_PROC MMC_PRGD_PROC+MMC_PRG_INCREMENT
+//#define MMC_PRGF_PROC MMC_PRGE_PROC+MMC_PRG_INCREMENT
 
 // =======manual switch opcodes======
-//#define SWITCH_OPC 0xC7
-//#define SWITCH_OFS 0x06C1
+#define SWITCH_OPC 0xC7
+//#define SWITCH_OFS 0x005C
 
-//#define CUSTOM_TABLE_JUMP0 "21 ?? ?? C3 50 04"
+//#define CUSTOM_TABLE_JUMP0 "21 ?? ?? C3 0D 02"
 //#define CUSTOM_TABLE_JUMP_OFS0 1
 
-//#define CUSTOM_TABLE_JUMP1 "21 ?? ?? CD 50 04"
-//#define CUSTOM_TABLE_JUMP_OFS1 3
+//#define CUSTOM_TABLE_JUMP1 "21 ?? ?? C3 7C 03"
+//#define CUSTOM_TABLE_JUMP_OFS1 1
 
 //#define CUSTOM_TABLE_JUMP2 "21 ?? ?? CD DA 11 CD 9C 14"
 //#define CUSTOM_TABLE_JUMP_OFS2 1
@@ -74,40 +78,48 @@
 //#define CUSTOM_TABLE_JUMP_OFS3 1
 
 // ====manual farcall parameters=====
-#define FARCALL_OPCA 0xEF
-#define FARCALL_BOFSA 3
-#define FARCALL_WOFSA 1
-#define FARCALL_SIZEA 3
-#define FARCALL_PARAMA
-#define FARCALL_EXECA
+//#define FARCALL_OPCA 0xDF
+//#define FARCALL_BOFSA -1
+//#define FARCALL_WOFSA -2
+//#define FARCALL_SIZEA 3
+//#define FARCALL_PARAMA
+//#define FARCALL_EXECA
 //#define FARCALL_SYSA
+//#define FARCALL_SYSOFSA 0x4001
+//#define FARCALL_PARAM_SIZEA
 
-#define FARCALL_OPCB 0xE7
-#define FARCALL_BOFSB 5
-#define FARCALL_WOFSB 1
-#define FARCALL_SIZEB 5
-#define FARCALL_PARAMB
+//#define FARCALL_OPCB 0xE7
+//#define FARCALL_BOFSB 5
+//#define FARCALL_WOFSB 1
+//#define FARCALL_SIZEB 5
+//#define FARCALL_PARAMB
 //#define FARCALL_EXECB
 //#define FARCALL_SYSB
+//#define FARCALL_SYSOFSB  0x4001
 
-#define FARCALL_OPCC 0xCF
-#define FARCALL_BOFSC 1
-#define FARCALL_WOFSC 1
-#define FARCALL_SIZEC 1
-#define FARCALL_PARAMC
+//#define FARCALL_OPCC 0xCF
+//#define FARCALL_BOFSC 1
+//#define FARCALL_WOFSC 1
+//#define FARCALL_SIZEC 1
+//#define FARCALL_PARAMC
 //#define FARCALL_EXECC
-#define FARCALL_SYSC
+//#define FARCALL_SYSC
+//#define FARCALL_SYSOFSC  0x4001
 
-//#define FARCALL_OFS0 0x3991
-//#define FARCALL_BOFS0 3
-//#define FARCALL_WOFS0 4
+//#define FARCALL_OFS0 0x0036
+//#define FARCALL_BOFS0 -4
+//#define FARCALL_WOFS0 -2
 //#define FARCALL_SYS0
+//#define FARCALL_SYSOFS0  0x4001
 //#define FARCALL_SIZE0 3
 //#define FARCALL_PARAM0
+//#define FARCALL_PARAM_SIZE0
 
-//#define FARCALL_OFS1 0x0803
-//#define FARCALL_BOFS1 5
-//#define FARCALL_WOFS1 3
+//#define FARCALL_OFS1 0x0CA2
+//#define FARCALL_BOFS1 -4
+//#define FARCALL_WOFS1 -2
+//#define FARCALL_SYS1
+//#define FARCALL_SYSOFS1  0x400F
 //#define FARCALL_SIZE1 8
 //#define FARCALL_PARAM1
 
@@ -122,77 +134,86 @@
 //#define FARCALL_WOFS -2
 //#define FARCALL_WOFS_OPC 0x21
 
+//#define FARCALL_OFS0 0x0B27
 //#define FARCALL_8BIT0
 //#define FARCALL_BOFS0 -1
-//#define FARCALL_WOFS_LO0 -3
-//#define FARCALL_WOFS_HI0 -5
+//#define FARCALL_WOFS_LO0 -5
+//#define FARCALL_WOFS_HI0 -3
 
+//#define FARCALL_OFS1 0x0B27
 //#define FARCALL_8BIT1
 //#define FARCALL_BOFS1 -1
 //#define FARCALL_WOFS_LO1 -3
 //#define FARCALL_WOFS_HI1 -5
 
 // ====manual farofs parameters=====
-//Jinsei Game
-//#define FPRN0	"3E ?? E0 9F 11 ?? ?? 21 ?? ?? ?? A7 06"
-//#define FPRN0_B 1
-//#define FPRN0_W 5
-//#define FPRN0_C 0
 
-//#define FPRN1	"3E ?? E0 9F 21 ?? ?? 11 ?? ?? ?? A7 06"
-//#define FPRN1_B	1
-//#define FPRN1_W	8
-//#define FPRN1_C	0
+///*
+#define FPRN0	"21 ?? ?? 11 ?? ?? 3E ?? CD"
+#define FPRN0_B 7
+#define FPRN0_W 1
+#define FPRN0_C 0
 
-//#define FPRN2	"3E ?? E0 9F CD 36 04 11 ?? ?? 21 ?? ?? ?? A7 06"
-//#define FPRN2_B	1
-//#define FPRN2_W	8
-//#define FPRN2_C	0
+#define FPRN1	"3E ?? 21 ?? ?? 11 ?? ?? CD"
+#define FPRN1_B	1
+#define FPRN1_W	3
+#define FPRN1_C	0
 
-//#define FPRN3	"3E ?? E0 9F 21 ?? ?? 11 ?? ?? 01 ?? ?? ?? CF 04"
-//#define FPRN3_B	1
-//#define FPRN3_W	5
-//#define FPRN3_C	0
+#define FPRN2	"3E ?? 01 ?? ?? 21 ?? ?? 11 ?? ?? CD"
+#define FPRN2_B	1
+#define FPRN2_W	6
+#define FPRN2_C	0
 
-//#define FPRN4	"3E ?? E0 9F 11 ?? ?? 21 ?? ?? CD 34 06"
-//#define FPRN4_B	1
-//#define FPRN4_W	5
-//#define FPRN4_C	0
+#define FPRN3	"21 ?? ?? 11 ?? ?? 01 ?? ?? 3E ?? CD"
+#define FPRN3_B	10
+#define FPRN3_W	1
+#define FPRN3_C	0
+//*/
 
-//#define FPRN5	"3E ?? E0 9F 21 ?? ?? 11 ?? ?? 01 ?? ?? CD D9 09"
-//#define FPRN5_B	1
-//#define FPRN5_W	5
+#define FPRN4	"11 ?? ?? CD C4 45"
+#define FPRN4_B	-3
+#define FPRN4_W	1
+#define FPRN4_C	0
+
+//#define FPRN5	"11 ?? ?? 21 ?? ?? 01 ?? ?? ?? DB 05"
+//#define FPRN5_B	8
+//#define FPRN5_W	4
 //#define FPRN5_C	0
 
-//#define FPRN6	"3E ?? E0 9F 21 ?? ?? 11 ?? ?? 01 ?? ?? CD 5F 06"
+//#define FPRN6	"3E ?? 21 ?? ?? 11 ?? ?? 01 ?? ?? CD 1C 03"
 //#define FPRN6_B	1
-//#define FPRN6_W	8
+//#define FPRN6_W	3
 //#define FPRN6_C	0
 
-//#define FPRN7	"3E ?? E0 9F 21 ?? ?? 11 ?? ?? CD 34 06"
-//#define FPRN7_B	1
-//#define FPRN7_W	8
+//#define FPRN7	"21 ?? ?? 06 ?? 0E ?? CD C8 18"
+//#define FPRN7_B	-4
+//#define FPRN7_W	1
 //#define FPRN7_C	0
 
-//#define FPRN8	"3E ?? E0 9F CD ?? ?? 21 ?? ?? 11 ?? ?? CD A7 06"
-//#define FPRN8_B	1
-//#define FPRN8_W	11
+//#define FPRN8	"21 ?? ?? 11 ?? ?? 01 ?? ?? 3E ?? E0 ?? 3E ?? E0 ?? 3E ?? CD 39 0A"
+//#define FPRN8_B	18
+//#define FPRN8_W	1
 //#define FPRN8_C	0
 
-//#define FPRN9	"06 ?? 21 ?? ?? CD 17 05"
+//#define FPRN9	"3E ?? E0 ?? 21 ?? ?? 11 ?? ?? 01 ?? ?? CD B3 0A"
 //#define FPRN9_B	1
-//#define FPRN9_W	3
-//#define FPRN9_C	1
+//#define FPRN9_W	5
+//#define FPRN9_C	0
 
-//#define FPRNA	"3E ?? 21 ?? ?? 11 ?? ?? Cd 0D 3E"
-//#define FPRNA_B	1
-//#define FPRNA_W	3
+//#define FPRNA	"21 ?? ?? CD 98 29"
+//#define FPRNA_B	-3
+//#define FPRNA_W	1
 //#define FPRNA_C	0
 
-//#define FPRN0B	"FA ?? ?? C6 ?? 4F 06 ??30 01 04"
-//#define FPRN0B_B	11
-//#define FPRN0_WL	1
-//#define FPRN0_WH	6
+//#define FPRN0B	"21 C1 C0 3E ?? 22 36 ?? 3E ?? FF"
+//#define FPRN0B_B	9
+//#define FPRN0_WL	4
+//#define FPRN0_WH	7
+
+//#define FPRN0B	"3E ?? E0 ?? 3E ?? E0 93 3E ?? E0 94"
+//#define FPRN0B_B	1
+//#define FPRN0_WL	5
+//#define FPRN0_WH	9
 
 // ====custom farofs parameters=====c
 //#define CUSTOM_PATTERN0	"3E ?? EA 14 C3 3E ?? EA 15 C3 3E ??"
@@ -208,17 +229,17 @@
 //#define CUSTOM_PATTERN1_ARG0 -1
 
 // ========parametric patterns=======
-#define PARAMETRIC_OPC0 0xDF
-#define PARAMETRIC_SIZE0 1
-//#define PARAMETRIC_OPC1 0xEF
-//#define PARAMETRIC_SIZE1 1
-//#define PARAMETRIC_OPC2 0xE7
-//#define PARAMETRIC_SIZE2 1
+//#define PARAMETRIC_OPC0 0xE7
+//#define PARAMETRIC_SIZE0 1
+//#define PARAMETRIC_OPC1 0xD7
+//#define PARAMETRIC_SIZE1 4
+//#define PARAMETRIC_OPC2 0xEF
+//#define PARAMETRIC_SIZE2 4
 //#define PARAMETRIC_OPC3 0xE7
-//#define PARAMETRIC_SIZE3 1
+//#define PARAMETRIC_SIZE3 4
 
-//#define PARAMETRIC_OFS0 0x09B7
-//#define PARAMETRIC_OSIZE0 3
+//#define PARAMETRIC_OFS0 0x1213
+//#define PARAMETRIC_OSIZE0 2
 //#define PARAMETRIC_OFS1 0x2531
 //#define PARAMETRIC_OSIZE1 1
 //#define PARAMETRIC_OFS2 0x041F
@@ -245,20 +266,22 @@ static make_new_comment(ea, cmnt) {
 static code_patterns(void) {
 	auto cnt;
 
-	find_pads("EA ?? ?? 3E 30 E0 00 FA ?? ?? ?? 79 A0 A8 EA ?? ??"	,1,	8,	2,	15,	2);
-	find_pads("F0 ?? A8 A0 E0 ?? 78 E0 ??"							,1,	8,	1,	5,	1);
-	find_pads("F0 ?? A9 A1 E0 ?? 79 E0 ??"							,1,	8,	1,	5,	1);
-	find_pads("F0 ?? A9 A1 E0 ?? ?? ?? ?? ?? 79 E0 ??"				,1,	12,	1,	5,	1);
-	find_pads("FA ?? ?? A0 A8 EA ?? ?? 78 EA ?? ??"					,1,	10,	2,	6,	2);
-	find_pads("FA ?? ?? A8 A0 E0 ?? 78 EA ?? ??"					,1,	9,	2,	6,	1);
-	find_pads("FA ?? ?? A8 A0 EA ?? ?? 78 EA ?? ??"					,1,	10,	2,	6,	2);
-	find_pads("FA ?? ?? A9 A1 EA ?? ?? 79 EA ?? ??"					,1,	10,	2,	6,	2);
-	find_pads("FA ?? ?? 2F A1 EA ?? ?? 79 EA ?? ??"					,1,	10,	2,	6,	2);
+	find_pads("EA ?? ?? 3E 30 E0 00 FA ?? ?? ?? 79 A0 A8 EA"	,1,	8,	2,	15,	2);
+	find_pads("F0 ?? A8 A0 E0 ?? 78 E0"							,1,	8,	1,	5,	1);
+	find_pads("F0 ?? A9 A1 E0 ?? 79 E0"							,1,	8,	1,	5,	1);
+	find_pads("F0 ?? A9 A1 E0 ?? ?? ?? ?? ?? 79 E0"				,1,	12,	1,	5,	1);
+	find_pads("FA ?? ?? A0 A8 EA ?? ?? 78 EA"					,1,	10,	2,	6,	2);
+	find_pads("FA ?? ?? A8 A0 E0 ?? 78 EA"						,1,	9,	2,	6,	1);
+	find_pads("FA ?? ?? A8 A0 EA ?? ?? 78 EA"					,1,	10,	2,	6,	2);
+	find_pads("FA ?? ?? A9 A1 EA ?? ?? 79 EA"					,1,	10,	2,	6,	2);
+	find_pads("FA ?? ?? 2F A1 EA ?? ?? 79 EA"					,1,	10,	2,	6,	2);
+//	find_pads("F0 ?? A9 A1 E9 8B 79 E0 ?? E0"
 
 	find_code("C5 3E 20 E0 00 F0 00 F0 00 2F E6 0F",				"_read_pad");
 	find_code("3E 20 E0 00 F0 00 F0 00 2F E6 0F",					"_read_pad");
 	find_code("3E 20 E0 00 F0 00 F0 00 F0 00 2F E6 0F",				"_read_pad");
 	find_code("0E 00 3E 20 E2 F2 F2 F2 47 3E 10 E2",				"_read_pad");
+	find_code("0E 00 3E 20 E2 F2 F2 E6 0F CB 37 47 3E 10 E2",		"_read_pad");
 	find_code("F3 0E 00 3E 20 E2 F2 F2 2F",							"_read_pad");
 
 	find_code("22 0D 20 FC 05 20 F9 C9",							"_memset");
@@ -310,6 +333,12 @@ static code_patterns(void) {
 	find_code("7E E6 07 C8 47 0E 00 C5 3E 00 E2 3E 30 E2 06 10",	"_sgb_cmd");
 	find_code("11 58 1B 00 00 00 1B 7A B3 20 F8 C9",				"_sgb_delay1B58");
 	find_code("11 D6 06 00 00 00 1B 7A B3 20 F8 0B 78 B1 20 F0 C9",	"_sgb_delay6D6");
+
+	find_code("0E 80 06 0A 21 ?? ?? 2A E2 0C 05 20 FA C9",			"_ram_dma_sub_init");
+	find_code("3E ?? E0 46 3E 28 3D 20 FD C9",						"_ram_dma_sub_data");
+
+	find_code("F0 40 E6 80 28 0C F0 44 FE 91 20 FA F0 40 E6 7F E0 40 C9", "_render_off");
+	find_code("F0 44 FE 91 20 FA F0 40 CB BF E0 40",                "_render_off");
 
 	cnt = 0;
 
@@ -384,42 +413,58 @@ static code_patterns(void) {
 	find_custom_patterns(CUSTOM_PATTERN1, CUSTOM_PATTERN1_B, CUSTOM_PATTERN1_W, CUSTOM_PATTERN1_ARG0, CUSTOM_PATTERN1_MODE);
 #endif
 
+#ifdef	CUSTOM_TABLE_JUMP0
+	cnt = find_table_jumps(CUSTOM_TABLE_JUMP0,CUSTOM_TABLE_JUMP_OFS0,cnt);
+#endif
+#ifdef	CUSTOM_TABLE_JUMP1
+	cnt = find_table_jumps(CUSTOM_TABLE_JUMP1,CUSTOM_TABLE_JUMP_OFS1,cnt);
+#endif
+#ifdef	CUSTOM_TABLE_JUMP2
+	cnt = find_table_jumps(CUSTOM_TABLE_JUMP2,CUSTOM_TABLE_JUMP_OFS2,cnt);
+#endif
+#ifdef	CUSTOM_TABLE_JUMP3
+	cnt = find_table_jumps(CUSTOM_TABLE_JUMP3,CUSTOM_TABLE_JUMP_OFS3,cnt);
+#endif
+
 #ifdef SWITCH_DETECT_A
 	cnt = 0;
 
+	cnt = find_table_jumps("01 ?? ?? 09 2A 66 6F E9",					1, cnt);
+	cnt = find_table_jumps("01 ?? ?? F0 ?? 6F 26 00 29 09 2A 66 6F E9",	1, cnt);
 	cnt = find_table_jumps("06 00 21 ?? ?? 09 09 2A 66 6F E9", 			3, cnt);
-	cnt = find_table_jumps("21 ?? ?? 09 2A 66 6F E9", 					1, cnt);
 //	cnt = find_table_jumps("06 00 4F CB 21 21 ?? ?? 09 2A 66 6F E9", 	6, cnt);
 //	cnt = find_table_jumps("07 4F 06 00 21 ?? ?? 09 2A 66 6F E9",		5, cnt);
 	cnt = find_table_jumps("11 ?? ?? 19 11 ?? ?? D5 2A 66 6F E9", 		1, cnt);
-	cnt = find_table_jumps("21 ?? ?? 06 00 FA ?? ?? 4F CB 21 CB 10 09 2A 66 6F E9",	1, cnt);
-	cnt = find_table_jumps("21 ?? ?? 06 00 4F CB 21 CB 10 09 2A 66 6F E9",	1, cnt);
-	cnt = find_table_jumps("FA ?? ?? 21 ?? ?? 16 00 5F CB 23 CB 12 19 2A 66 6F E9",	4, cnt);
-	cnt = find_table_jumps("21 ?? ?? 07 85 6F 30 01 24 2A 66 6F E9",	1, cnt);
+	cnt = find_table_jumps("11 ?? ?? 19 2A 66 6F E9",					1, cnt);
 	cnt = find_table_jumps("21 ?? ?? 06 00 4F 09 09 2A 66 6F E9",		1, cnt);
+	cnt = find_table_jumps("21 ?? ?? 06 00 4F CB 21 CB 10 09 2A 66 6F E9",	1, cnt);
+	cnt = find_table_jumps("21 ?? ?? 06 00 FA ?? ?? 4F CB 21 CB 10 09 2A 66 6F E9",	1, cnt);
+	cnt = find_table_jumps("21 ?? ?? 07 85 6F 30 01 24 2A 66 6F E9",	1, cnt);
 	cnt = find_table_jumps("21 ?? ?? 09 2A 66 6F 01 ?? ?? C5 E9",		1, cnt);
+	cnt = find_table_jumps("21 ?? ?? 09 2A 66 6F E9", 					1, cnt);
 	cnt = find_table_jumps("21 ?? ?? 09 2A 66 6F FA ?? ?? 4F 06 00 E9",	1, cnt);
 	cnt = find_table_jumps("21 ?? ?? 09 4E 23 46 69 60 E9",				1, cnt);
+//	cnt = find_table_jumps("21 ?? ?? 09 54 5D 62 6B 2A 66 6F E9",		1, cnt);
 	cnt = find_table_jumps("21 ?? ?? 09 7E 23 66 6F E9",				1, cnt);
 	cnt = find_table_jumps("21 ?? ?? 16 00 87 5F 19 5E 23 66 6B D1 E9",	1, cnt);
-	cnt = find_table_jumps("21 ?? ?? 85 6F 30 01 24 5E 23 56 D5 E1 E9",	1, cnt);
 	cnt = find_table_jumps("21 ?? ?? 19 2A 47 7E 67 68 E9", 			1, cnt);
 	cnt = find_table_jumps("21 ?? ?? 19 2A 66 6F 11 ?? ?? D5 E9",		1, cnt);
 //	cnt = find_table_jumps("21 ?? ?? 19 2A 66 6F E9", 					1, cnt);		// portal runner use this pattern in a different way
+	cnt = find_table_jumps("21 ?? ?? 85 6F 30 01 24 5E 23 56 D5 E1 E9",	1, cnt);
 	cnt = find_table_jumps("21 ?? ?? 87 4F 06 00 09 2A 66 6F E9",		1, cnt);
 	cnt = find_table_jumps("21 ?? ?? 87 85 30 01 24 6F 2A 66 6F E9", 	1, cnt);
 	cnt = find_table_jumps("21 ?? ?? 87 85 6F 3E 00 8C 67 2A 66 6F E9", 1, cnt);
+//	cnt = find_table_jumps("21 ?? ?? ?? 0F 3E",		                    1, cnt);	// Nanotone custom table jump
+//	cnt = find_table_jumps("21 ?? ?? CF",		                        1, cnt);	// Evangelion
 	cnt = find_table_jumps("21 ?? ?? FA ?? ?? 87 4F 06 00 09 2A 66 6F E9",	1, cnt);
-	cnt = find_table_jumps("01 ?? ?? 09 2A 66 6F E9",					1, cnt);
-//	cnt = find_table_jumps("CB 27 6F AF 67 01 ?? ?? 09 2A 66 6F E9",	6, cnt);
-	cnt = find_table_jumps("11 ?? ?? 19 2A 66 6F E9",					1, cnt);
-//	cnt = find_table_jumps("CB 25 11 ?? ?? 19 2A 66 6F E9",				3, cnt);
+	cnt = find_table_jumps("21 ?? ?? FA ?? ?? CB 27 4F 06 00 09 2A 66 6F E9",    1, cnt);
 //	cnt = find_table_jumps("4A CB 21 06 00 21 ?? ?? 09 2A 66 6F E9",	6, cnt);
-//	cnt = find_table_jumps("4F 06 00 21 ?? ?? 09 2A 66 6F E9", 			4, cnt);
 	cnt = find_table_jumps("4F 06 00 21 ?? ?? 09 09 2A 66 6F C9",		4, cnt);
+//	cnt = find_table_jumps("4F 06 00 21 ?? ?? 09 2A 66 6F E9", 			4, cnt);
 	cnt = find_table_jumps("4F 21 ?? ?? 09 2A 66 6F 11 ?? ?? D5 E9",	2, cnt);
 //	cnt = find_table_jumps("4F 21 ?? ?? 09 2A 66 6F E9",				2, cnt);
 //	cnt = find_table_jumps("4F CB 21 06 00 21 ?? ?? 09 2A 66 6F E9", 	6, cnt);
+	cnt = find_table_jumps("5F 16 00 21 ?? ?? 19 19 2A 66 6F E9",		4, cnt);
 	cnt = find_table_jumps("5F 21 ?? ?? 19 2A 66 6F 01 ?? ?? C5 E9",	2, cnt);
 	cnt = find_table_jumps("5F CB 23 16 00 21 ?? ?? 19 5E 23 56 D5 C9", 6, cnt);
 	cnt = find_table_jumps("87 06 00 4F 21 ?? ?? 09 2A 66 6F E5 C9",	5, cnt);
@@ -437,29 +482,14 @@ static code_patterns(void) {
 //	cnt = find_table_jumps("87 6F 26 00 11 ?? ?? 19 2A 66 6F E9",		5, cnt);
 	cnt = find_table_jumps("87 C5 4F 06 00 21 ?? ?? 09 C1 2A 66 6F E9", 6, cnt);
 //	cnt = find_table_jumps("CB 21 21 ?? ?? 09 2A 66 6F E9",			    3, cnt);
+//	cnt = find_table_jumps("CB 25 11 ?? ?? 19 2A 66 6F E9",				3, cnt);
 	cnt = find_table_jumps("CB 27 4F 06 00 21 ?? ?? 09 2A 47 7E 67 68 E9", 	6, cnt);
 //	cnt = find_table_jumps("CB 27 4F 06 00 21 ?? ?? 09 2A 66 6F E9",	6, cnt);
 	cnt = find_table_jumps("CB 27 4F 06 00 21 ?? ?? 09 4E 23 46 E1 C5 C9",	6, cnt);
+//	cnt = find_table_jumps("CB 27 6F AF 67 01 ?? ?? 09 2A 66 6F E9",	6, cnt);
 	cnt = find_table_jumps("E5 16 00 21 ?? ?? 19 5E 23 56 E1 D5 C9",	4, cnt);
 	cnt = find_table_jumps("F5 21 ?? ?? 19 2A 66 6F F1 E9",				2, cnt);
-	cnt = find_table_jumps("5F 16 00 21 ?? ?? 19 19 2A 66 6F E9",		4, cnt);
-	cnt = find_table_jumps("01 ?? ?? F0 ?? 6F 26 00 29 09 2A 66 6F E9",	1, cnt);
-//	cnt = find_table_jumps("21 ?? ?? 09 54 5D 62 6B 2A 66 6F E9",		1, cnt);
-//	cnt = find_table_jumps("21 ?? ?? ?? 0F 3E",		                    1, cnt);	// Nanotone custom table jump
-//	cnt = find_table_jumps("21 ?? ?? CF",		                        1, cnt);	// Evangelion
-
-#ifdef	CUSTOM_TABLE_JUMP0
-	cnt = find_table_jumps(CUSTOM_TABLE_JUMP0,CUSTOM_TABLE_JUMP_OFS0,cnt);
-#endif
-#ifdef	CUSTOM_TABLE_JUMP1
-	cnt = find_table_jumps(CUSTOM_TABLE_JUMP1,CUSTOM_TABLE_JUMP_OFS1,cnt);
-#endif
-#ifdef	CUSTOM_TABLE_JUMP2
-	cnt = find_table_jumps(CUSTOM_TABLE_JUMP2,CUSTOM_TABLE_JUMP_OFS2,cnt);
-#endif
-#ifdef	CUSTOM_TABLE_JUMP3
-	cnt = find_table_jumps(CUSTOM_TABLE_JUMP3,CUSTOM_TABLE_JUMP_OFS3,cnt);
-#endif
+	cnt = find_table_jumps("FA ?? ?? 21 ?? ?? 16 00 5F CB 23 CB 12 19 2A 66 6F E9",	4, cnt);
 
 	cnt = find_table_jumps_8bit("C6 ?? 6F 7C CE ?? 67 2A 66 6F E9",1,5,cnt);
 	cnt = find_table_jumps_8bit("C6 ?? 5F 7A CE ?? 57 62 6B 2A 66 6F E9",1,5,cnt);
@@ -485,12 +515,19 @@ static main(void) {
 	auto farcall_cnt = 0, switch_cnt = 0, param_cnt = 0;
 	auto farcall_s = 0, switch_es = 0, param_s = 0;
 	auto farcall_cnt_prev = 0, switch_cnt_prev = 0, param_cnt_prev = 0, result = 0;
+	auto ass0, ass1;
 
 #ifdef MMC_DEFAULT_BANK
 	curbank = MMC_DEFAULT_BANK;
 #endif
 
+#ifdef MMC_DEFAULT_BANK_CALL
+	curbank = MMC_DEFAULT_BANK_CALL;
+#endif
+
+#ifdef MAKE_NAMES
 	MakeNames();
+#endif
 
 	extPos = strstr(idbFileName, ".idb");
 	cdlFileName = substr(idbFileName, 0, extPos) + ".cdl";
@@ -597,6 +634,7 @@ static main(void) {
 //	work here
 			do {
 				segeai = segea + i;
+				auto F = GetFlags(segeai);
 				if(secondpass == 0) {
 					// FIRST PASS START
 					if(cdlFileOpened == 1)
@@ -611,14 +649,14 @@ static main(void) {
 
 						MakeComm(segeai, "");
 #endif
-						if(isCode(GetFlags(segeai))) {
+						if(isCode(F)) {
 #ifdef MAKE_CODE_UNK
 							MakeUnknown(segeai, 1, DOUNK_SIMPLE);
 #endif
 #ifdef MAKE_CODE_UNK_BYTE
 							MakeByte(segeai);
 #endif
-						} else if(!isData(GetFlags(segeai))) {
+						} else if(!isData(F)) {
 #ifdef MAKE_DATA_BYTE
 							MakeByte(segeai);
 #endif
@@ -637,10 +675,10 @@ static main(void) {
 						}
 
 //						if(segeai>START_MAKE_CODE_EA) { // damn emulators with real firmware execution!
-							if(isData(GetFlags(segeai)))
+							if(isData(F))
 								MakeUnknown(segeai, 3, DOUNK_SIMPLE);
 #ifdef MAKE_CODE
-							MakeCode(segeai);
+						MakeCode(segeai);
 #endif
 //						}
 						codelog++;
@@ -656,18 +694,25 @@ static main(void) {
 					opcode = Byte(segeai);
 					for(j=0;j<2;j++) {
 						optype = GetOpType(segeai,j);
+#ifdef DEBUG
+								make_new_comment(segeai, form("debug [prebank=%d,curbank=%d]",prebank,curbank));
+#endif
 						if(optype==1) {
 							// bank switch autodetect for bank 0
 #ifdef MMC_PRG_SET_DETECT
 							if((opcode==0x3E)||(opcode==0x06)){
 								prebank=Byte(segeai+1);
+//								prebank = ((Byte(segeai + 1) >> 1) & 0xF) | (((Byte(segeai + 1) & 1) ^ 1) << 4);
 								preea=segeai;
+//#ifdef DEBUG
+//								make_new_comment(segeai, form("debug [prebank=%d,curbank=%d]",prebank,curbank));
+//#endif
 							} else if(opcode==0xEA) {
 								auto tmp0 = Word(segeai+1);
 								if((ctype < 4)||(ctype==0xFF)||(ctype==0x19)||(ctype==0x1B)) {	// MBC 1
 									if((tmp0>=0x2000)&&(tmp0<0x4000)) {
 										if((segeai-preea)<PRG_CMD_SIZE) {
-											curbank = prebank;
+											curbank = prebank & (banksnum - 1);
 											prebank = -1;
 											preea = -1;
 											bankflag = 1;
@@ -676,14 +721,17 @@ static main(void) {
 								} else {
 									if(((tmp0>=0x2100)&&(tmp0<0x2200))||(tmp0==0x3FFF)) {	// WTF? docs are wrong?
 										if((segeai-preea)<PRG_CMD_SIZE) {
-											curbank = prebank;
+											curbank = prebank & (banksnum - 1);
 											prebank = -1;
 											preea = -1;
 											bankflag = 1;
 										}
 									}
 								}
-							} else if (((opcode==0xF0)||(opcode==0xF1))&&(prebank!=-1)){	// protect from redefinition of A between preea and MMC operation opcode.
+//#ifdef DEBUG
+//								make_new_comment(segeai, form("debug [prebank=%d,curbank=%d]",prebank,curbank));
+//#endif
+							} else if (((opcode==0xF0)||(opcode==0xF1))&&((curbank==-1)||(prebank!=-1))){	// protect from redefinition of A between preea and MMC operation opcode.
 #ifdef MMC_DEFAULT_BANK
 								curbank = MMC_DEFAULT_BANK;
 #else
@@ -691,25 +739,39 @@ static main(void) {
 #endif
 								prebank = -1;
 								preea = -1;
+//#ifdef DEBUG
+//								make_new_comment(segeai, form("debug [prebank=%d,curbank=%d]",prebank,curbank));
+//#endif
 							}
 #endif
 						} else if(optype==8) {
 //							if(((opcode==0xC9)||(opcode==0xC3))&&(curbank!=-1)){
 							if((opcode==0x18)&&(curbank!=-1)){
-#ifdef MMC_DEFAULT_BANK
-								curbank = MMC_DEFAULT_BANK;
+#ifdef MMC_DEFAULT_BANK_CALL
+								curbank = MMC_DEFAULT_BANK_CALL;
 #else
 								curbank = -1;
 #endif
 								prebank = -1;
 								preea = -1;
+//#ifdef DEBUG
+//								make_new_comment(segeai, form("debug [prebank=%d,curbank=%d]",prebank,curbank));
+//#endif
 							}
-						} else if(optype==7){
-							if((opcode&0xC0)==0xC0){
-								opvalue=Word(segeai+1);
+						} else if(optype == 7){
+							if((opcode&0xC0) == 0xC0){
+								opvalue = Word(segeai + 1);
 #ifdef MAKE_OFFSETS
+
+	#ifdef MMC_DEFAULT_BANK_CALL
+								if (curbank == -1)
+									curbank = MMC_DEFAULT_BANK_CALL;
+	#endif
 								if(opvalue!=-1)
-									makeOffset(segeai,opvalue,seg,j,banksnum,curbank);
+									makeOffsetCall(segeai,opvalue,seg,j,banksnum,curbank);
+#endif
+#ifdef DEBUG
+								make_new_comment(segeai, form("debug [prebank=%d,curbank=%d]",prebank,curbank));
 #endif
 							}
 							if((opcode==0xCD)||(opcode==0xC3)) {
@@ -723,12 +785,15 @@ static main(void) {
 										curbank = -1;
 #endif
 									} else if((segeai-preea)<PRG_CMD_SIZE) {
-										curbank = prebank;
+										curbank = prebank & (banksnum - 1);
 										prebank = -1;
 										preea = -1;
 										bankflag = 1;
 									}
 								}
+#endif
+#ifdef DEBUG
+								make_new_comment(segeai, form("debug [prebank=%d,curbank=%d]",prebank,curbank));
 #endif
 #ifdef MMC_SET_OFS1
 								if(tmp1 == MMC_SET_OFS1) {
@@ -739,7 +804,7 @@ static main(void) {
 										curbank = -1;
 #endif
 									} else if((segeai-preea)<PRG_CMD_SIZE) {
-										curbank = prebank;
+										curbank = prebank & (banksnum - 1);
 										prebank = -1;
 										preea = -1;
 										bankflag = 1;
@@ -774,7 +839,7 @@ static main(void) {
 								if(prgset!=BADADDR) {
 									if(tmp1 == prgset) {
 										if((segeai-preea)<PRG_CMD_SIZE) {
-											curbank = prebank;
+											curbank = prebank & (banksnum - 1);
 											prebank = -1;
 											preea = -1;
 											bankflag = 1;
@@ -785,7 +850,16 @@ static main(void) {
 								if((tmp1 == FARCALL_OFS0)) {
 									farcall_cnt++;
 	#ifdef FARCALL_PARAM0
-/* CUSTOM FARCALL
+			#ifdef FARCALL_SYS0
+/* Unexpected Development Sys Far Calls
+									MakeUnknown(segeai+FARCALL_WOFS0, 4, DOUNK_SIMPLE);
+									MakeWord(segeai+FARCALL_WOFS0);
+									MakeWord(segeai+FARCALL_WOFS0+2);
+									ass0 = MK_FP(AskSelector(3), 0);
+									OpOffEx(segeai+FARCALL_WOFS0, 0, REF_OFF16, -1, ass0, 0);
+									make_code(segeai+FARCALL_WOFS0+4);
+//*/
+///* CUSTOM FARCALL
 									MakeUnknown(segeai+3, 6, DOUNK_SIMPLE);
 									MakeData(segeai+3, FF_BYTE, 10, 0);
 									SetArrayFormat(segeai+3, AP_IDXHEX, 10, 0);
@@ -793,13 +867,15 @@ static main(void) {
 									far_ptr_code(segeai, FARCALL_BOFS0, FARCALL_WOFS0, 0, 0);
 									make_code(segeai+15);
 //*/
-//* REGULAR FARCALL
+			#else
+///* REGULAR FARCALL
 									MakeUnknown(segeai+3, FARCALL_SIZE0, DOUNK_SIMPLE);
 									MakeWord(segeai+FARCALL_WOFS0);
 									MakeByte(segeai+FARCALL_BOFS0);
 									far_ptr_code(segeai, FARCALL_BOFS0, FARCALL_WOFS0, 0, 0);
 									make_code(segeai+FARCALL_SIZE0+3);
 //*/
+			#endif
 	#else
 		#ifdef FARCALL_8BIT0
 									auto temp0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFS0)), 0);
@@ -810,14 +886,19 @@ static main(void) {
 									Wait();
 		#else
 			#ifdef FARCALL_SYS0
-									auto ass1 = MK_FP(AskSelector(Byte(segeai+FARCALL_BOFS0)), 0);
-									ass1 = ass1 + Word(ass1 + (Byte(segeai+FARCALL_WOFS0) << 1) + 0x4001);
-									OpNumber(segeai - 6, 1);
-									SetManualInsn(segeai, form("FLOAD   %s", Name(ass1)));
-//									MakeNameAuto(segeai, form("_j%s", Name(ass1)));
-									add_dref(segeai, ass1, dr_O|XREF_USER);
-//									AddCodeXref(segeai, ass1, fl_CF|XREF_USER);
-//									make_code(ass1);
+									ass0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFS0)), 0);
+									ass1 = ass0 + (Byte(segeai + FARCALL_WOFS0)) + FARCALL_SYSOFS0;
+									MakeUnknown(ass1, 2, DOUNK_SIMPLE);
+									MakeWord(ass1);
+									OpOffEx(ass1, 0, REF_OFF16, -1, ass0, 0);
+									Wait();
+									ass0 = ass0 + Word(ass1);
+									SetManualInsn(segeai, form("FPTR    %s", Name(ass0)));
+									OpNumber(segeai - 3, 1);
+									add_dref(segeai, ass0, dr_O|XREF_USER);
+//									ass0 = MK_FP(AskSelector(5), 0);
+//									OpOffEx(segeai + FARCALL_WOFS0, 1, REF_OFF16, -1, ass0, 0);
+
 			#else
 //									if((Byte(segeai+FARCALL_BOFS-1)==FARCALL_BOFS_OPC)&&(Word(segeai+FARCALL_WOFS-1)==FARCALL_WOFS_OPC)) {
 										far_ptr_code(segeai, FARCALL_BOFS0, FARCALL_WOFS0, 1, -1);
@@ -846,9 +927,18 @@ static main(void) {
 									make_code(temp0 + temp1);
 									Wait();
 		#else
+			#ifdef FARCALL_SYS1
+									ass0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFS1)), 0);
+									ass0 = ass0 + Word(ass0 + (Byte(segeai + FARCALL_WOFS1) << 1) + FARCALL_SYSOFS1);
+									SetManualInsn(segeai, form("FJSR    %s", Name(ass0)));
+									OpNumber(segeai - 3, 1);
+									AddCodeXref(segeai, ass0, fl_CF|XREF_USER);
+									make_code(ass0);
+			#else
 //									if((Byte(segeai+FARCALL_BOFS-1)==FARCALL_BOFS_OPC)&&(Word(segeai+FARCALL_WOFS-1)==FARCALL_WOFS_OPC)) {
 										far_ptr_code(segeai, FARCALL_BOFS1, FARCALL_WOFS1, 1, -1);
 //									}
+			#endif
 		#endif
 	#endif
 								}
@@ -902,14 +992,28 @@ static main(void) {
 #ifdef PARAMETRIC_OFS0
 								if(tmp1 == PARAMETRIC_OFS0) {
 									param_cnt++;
-									make_data_array(segeai+3,PARAMETRIC_OSIZE0,"");
+									///* CUSTOM
+									if(PARAMETRIC_OSIZE0==4) {
+										MakeUnknown(segeai+3, 4, DOUNK_SIMPLE);
+										MakeWord(segeai+3);
+										MakeWord(segeai+5);
+										OpOffEx(segeai+3, 0, REF_OFF32, -1, MK_FP(AskSelector(3), 0), 0);
+									} else //*/
+										make_data_array(segeai+3,PARAMETRIC_OSIZE0,"");
 									make_code(segeai+3+PARAMETRIC_OSIZE0);
 								}
 #endif
 #ifdef PARAMETRIC_OFS1
 								if(tmp1 == PARAMETRIC_OFS1) {
 									param_cnt++;
-									make_data_array(segeai+3,PARAMETRIC_OSIZE1,"");
+									///* CUSTOM
+									if(PARAMETRIC_OSIZE1==4) {
+										MakeUnknown(segeai+3, 4, DOUNK_SIMPLE);
+										MakeWord(segeai+3);
+										MakeWord(segeai+5);
+										OpOffEx(segeai+3, 0, REF_OFF32, -1, MK_FP(AskSelector(4), 0), 0);
+									} else //*/
+										make_data_array(segeai+3,PARAMETRIC_OSIZE1,"");
 									make_code(segeai+3+PARAMETRIC_OSIZE1);
 								}
 #endif
@@ -955,8 +1059,19 @@ static main(void) {
 									make_code(segeai+3+PARAMETRIC_OSIZE7);
 								}
 #endif
-#ifdef MMC_RESTORE_OFS
-								if((tmp1==MMC_RESTORE_OFS)&&(curbank!=-1)) {
+#ifdef MMC_RESTORE0_OFS
+								if((tmp1==MMC_RESTORE0_OFS)&&(curbank!=-1)) {
+#ifdef MMC_DEFAULT_BANK
+									curbank = MMC_DEFAULT_BANK;
+#else
+									curbank = -1;
+#endif
+									prebank = -1;
+									preea = -1;
+								}
+#endif
+#ifdef MMC_RESTORE1_OFS
+								if((tmp1==MMC_RESTORE1_OFS)&&(curbank!=-1)) {
 #ifdef MMC_DEFAULT_BANK
 									curbank = MMC_DEFAULT_BANK;
 #else
@@ -967,8 +1082,8 @@ static main(void) {
 								}
 #endif
 								if((opcode==0xC3)&&(curbank!=-1)){
-#ifdef MMC_DEFAULT_BANK
-									curbank = MMC_DEFAULT_BANK;
+#ifdef MMC_DEFAULT_BANK_CALL
+									curbank = MMC_DEFAULT_BANK_CALL;
 #else
 									curbank = -1;
 #endif
@@ -986,31 +1101,66 @@ static main(void) {
 									farcall_cnt++;
 	#ifdef FARCALL_PARAMA
 		#ifdef FARCALL_SYSA
-									MakeUnknown(segeai+1, 2, DOUNK_SIMPLE);
-									MakeWord(segeai+1);
-									auto ass0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFSA)), 0);
-									ass0 = ass0 + Word(ass0 + (Byte(segeai + FARCALL_WOFSA) << 1) + 0x4000);
+/* Unexpected Development Sys Far Calls
+									MakeUnknown(segeai + 1, 2, DOUNK_SIMPLE);
+									MakeWord(segeai+FARCALL_WOFSA);
+									ass1 = Word(segeai+FARCALL_WOFSA);
+									if(ass1<0x4000) {
+										ass0 = MK_FP(AskSelector(0), 0) + ass1;
+									} else if(Word(segeai+FARCALL_WOFSA)<0x8000) {
+										ass0 = MK_FP(AskSelector(1), 0) + ass1;
+									} else {
+										ass1 = ass1 - 0x4000;
+										ass0 = MK_FP(AskSelector(2), 0) + ass1;
+									}
 									SetManualInsn(segeai, form("FJSR    %s", Name(ass0)));
-									if(Byte(segeai + 3)==0xC9)
-										MakeNameAuto(segeai, form("_j%s", Name(ass0)));
-									SetManualInsn(segeai+1, "ENDM");
+									SetManualInsn(segeai + 1, "ENDM");
+									AddCodeXref(segeai, ass0, fl_CF|XREF_USER);
+									make_code(segeai+FARCALL_WOFSA+2);
+//*/
+									MakeUnknown(segeai + 1, 2, DOUNK_SIMPLE);
+									MakeWord(segeai + 1);
+									ass0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFSA)), 0);
+									ass1 = Word(ass0 + (Byte(segeai + FARCALL_WOFSA) << 1) + FARCALL_SYSOFSA);
+									if (ass1 < 0x4000)
+										ass0 = ass1;
+									else
+										ass0 = ass0 + ass1;
+									SetManualInsn(segeai, form("FJSR    %s", Name(ass0)));
+//									Message("0x%08X\n",segeai);
+//									if(Byte(segeai + 3)==0xC9)
+//										MakeNameAuto(segeai, form("_j%s", Name(ass0)),0);
+									SetManualInsn(segeai + 1, "ENDM");
 									AddCodeXref(segeai, ass0, fl_CF|XREF_USER);
 		#else
+			#ifdef FARCALL_PARAM_SIZEA
+									MakeUnknown(segeai + 1, Byte(segeai + FARCALL_BOFSA), DOUNK_SIMPLE);
+									MakeByte(segeai + FARCALL_BOFSA);
+									make_data_array(segeai + FARCALL_WOFSA, Byte(segeai + FARCALL_BOFSA), "");
+			#else
 									MakeUnknown(segeai+1, FARCALL_SIZEA, DOUNK_SIMPLE);
 									MakeWord(segeai+FARCALL_WOFSA);
-			#ifdef FARCALL_EXECA
+				#ifdef FARCALL_EXECA
 									far_ptr_code(segeai, FARCALL_BOFSA, FARCALL_WOFSA, 0, 0);
-			#else
+				#else
 									far_ptr(segeai, FARCALL_BOFSA, FARCALL_WOFSA, 0, 0);
-			#endif
+				#endif
 									MakeByte(segeai+FARCALL_BOFSA);
+			#endif
 		#endif
+		#ifndef FARCALL_PARAM_SIZEA
 									make_code(segeai+1+FARCALL_SIZEA);
 									Wait();
+		#endif
 	#else
 		#ifdef FARCALL_SYSA
-									auto ass0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFSA)), 0);
-									ass0 = ass0 + Word(ass0 + (Byte(segeai + FARCALL_WOFSA) << 1) + 0x4001);
+									ass0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFSA)), 0);
+									ass1 = ass0 + (Byte(segeai + FARCALL_WOFSA) << 1) + FARCALL_SYSOFSA;
+									MakeUnknown(ass1, 2, DOUNK_SIMPLE);
+									MakeWord(ass1);
+									OpOffEx(ass1, 0, REF_OFF16, -1, ass0, 0);
+									Wait();
+									ass0 = ass0 + Word(ass1);
 									SetManualInsn(segeai, form("FJSR    %s", Name(ass0)));
 									OpNumber(segeai - 3, 1);
 									AddCodeXref(segeai, ass0, fl_CF|XREF_USER);
@@ -1028,11 +1178,11 @@ static main(void) {
 		#ifdef FARCALL_SYSB
 									MakeUnknown(segeai+1, 2, DOUNK_SIMPLE);
 									MakeWord(segeai+1);
-									auto ass0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFSB)), 0);
-									ass0 = ass0 + Word(ass0 + (Byte(segeai + FARCALL_WOFSB) << 1) + 0x4000);
+									ass0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFSB)), 0);
+									ass0 = ass0 + Word(ass0 + (Byte(segeai + FARCALL_WOFSB) << 1) + FARCALL_SYSOFSB);
 									SetManualInsn(segeai, form("FJSR    %s", Name(ass0)));
 									if(Byte(segeai + 3)==0xC9)
-										MakeNameAuto(segeai, form("_j%s", Name(ass0)));
+										MakeNameAuto(segeai, form("_j%s", Name(ass0)),0);
 									SetManualInsn(segeai+1, "ENDM");
 									AddCodeXref(segeai, ass0, fl_CF|XREF_USER);
 		#else
@@ -1049,8 +1199,8 @@ static main(void) {
 									Wait();
 	#else
 		#ifdef FARCALL_SYSB
-									auto ass0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFSB)), 0);
-									ass0 = ass0 + Word(ass0 + (Byte(segeai + FARCALL_WOFSB) << 1) + 0x4001);
+									ass0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFSB)), 0);
+									ass0 = ass0 + Word(ass0 + (Byte(segeai + FARCALL_WOFSB) << 1) + FARCALL_SYSOFSB);
 									SetManualInsn(segeai, form("FJSR    %s", Name(ass0)));
 									OpNumber(segeai - 3, 1);
 									AddCodeXref(segeai, ass0, fl_CF|XREF_USER);
@@ -1069,16 +1219,16 @@ static main(void) {
 ///*
 									MakeUnknown(segeai+1, 1, DOUNK_SIMPLE);
 									MakeByte(segeai+1);
-									auto ass0 = Byte(segeai + 1);
+									ass0 = Byte(segeai + 1);
 									if(ass0 < 0x4B) {
 										ass0 = Word(0x1E0 + (ass0 << 1));
 										if(ass0 >= 0x4000)
 											ass0 = ass0 + MK_FP(AskSelector(0x1E), 0);
 									} else {
 										if(ass0 & 0x80)
-											ass0 = MK_FP(AskSelector(0x1F), 0) + Word(MK_FP(AskSelector(0x1F), 0) + 0x4000 + ((ass0 & 0x7F) << 1));
+											ass0 = MK_FP(AskSelector(0x1F), 0) + Word(MK_FP(AskSelector(0x1F), 0) + FARCALL_SYSOFSC + ((ass0 & 0x7F) << 1));
 										else
-											ass0 = MK_FP(AskSelector(0x1E), 0) + Word(MK_FP(AskSelector(0x1E), 0) + 0x4000 + (ass0 << 1));
+											ass0 = MK_FP(AskSelector(0x1E), 0) + Word(MK_FP(AskSelector(0x1E), 0) + FARCALL_SYSOFSC + (ass0 << 1));
 									}
 									SetManualInsn(segeai, form("SYS    %s", Name(ass0)));
 									SetManualInsn(segeai+1, "ENDM");
@@ -1091,7 +1241,7 @@ static main(void) {
 									ass0 = ass0 + Word(ass0 + (Byte(segeai + FARCALL_WOFSC) << 1) + 0x4000);
 									SetManualInsn(segeai, form("FJSR    %s", Name(ass0)));
 									if(Byte(segeai + 3)==0xC9)
-										MakeNameAuto(segeai, form("_j%s", Name(ass0)));
+										MakeNameAuto(segeai, form("_j%s", Name(ass0)),0);
 									SetManualInsn(segeai+1, "ENDM");
 									AddCodeXref(segeai, ass0, fl_CF|XREF_USER);
 //*/
@@ -1109,8 +1259,8 @@ static main(void) {
 									Wait();
 	#else
 		#ifdef FARCALL_SYSC
-									auto ass0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFSC)), 0);
-									ass0 = ass0 + Word(ass0 + (Byte(segeai + FARCALL_WOFSC) << 1) + 0x4001);
+									ass0 = MK_FP(AskSelector(Byte(segeai + FARCALL_BOFSC)), 0);
+									ass0 = ass0 + Word(ass0 + (Byte(segeai + FARCALL_WOFSC) << 1) + FARCALL_SYSOFSC);
 									SetManualInsn(segeai, form("FJSR    %s", Name(ass0)));
 									OpNumber(segeai - 3, 1);
 									AddCodeXref(segeai, ass0, fl_CF|XREF_USER);
@@ -1124,7 +1274,7 @@ static main(void) {
 #ifdef MAKE_OFFSETS
 								if(opvalue!=-1) {
 									auto forbid = 0;
-// prevent from doing a garbage offsets usually at DE/BC
+// manual prevent from doing a garbage offsets usually at DE/BC
 
 #ifdef FORBID_OFFSETS_BC
 									if((opcode == 0x01) && (opvalue < 0x8000)) forbid = 1;
@@ -1137,7 +1287,7 @@ static main(void) {
 #endif
 									if((opcode == 0xEA) && (opvalue < 0x8000)) forbid = 1;
 
-									if(forbid == 0)
+									if((forbid == 0) && (opvalue >= 0))
 										makeOffset(segeai,opvalue,seg,j,banksnum,curbank);
 								}
 #endif
@@ -1150,7 +1300,7 @@ static main(void) {
 										curbank = -1;
 #endif
 									} else if((segeai-preea)<PRG_CMD_SIZE) {
-										curbank = prebank;
+										curbank = prebank & (banksnum - 1);
 										prebank = -1;
 										preea = -1;
 										bankflag = 1;
@@ -1166,7 +1316,7 @@ static main(void) {
 										curbank = -1;
 #endif
 									} else if((segeai-preea)<PRG_CMD_SIZE) {
-										curbank = prebank;
+										curbank = prebank & (banksnum - 1);
 										prebank = -1;
 										preea = -1;
 										bankflag = 1;
@@ -1278,8 +1428,72 @@ static main(void) {
 									MakeByte(segeai+5);
 									make_code(segeai+6);
 // CUSTOM */
-//* REGULAR
-									make_data_array(segeai+1,PARAMETRIC_SIZE0,"");
+/* CUSTOM
+									auto tmp_byte;
+									segeai = segeai + 1;
+									while ((tmp_byte = Byte(segeai)) != 0xFF) {
+										auto tmp_bank = GetReg(segeai,"ds");
+										auto tmp_base = MK_FP(AskSelector(tmp_bank), 0);
+										auto tmp_byte2 = tmp_byte;
+										tmp_byte = tmp_byte & 0x1F;
+										MakeUnknown(segeai, 1, DOUNK_SIMPLE);
+										MakeByte(segeai);
+										segeai = segeai + 1;
+										if((tmp_byte == 0x09)||(tmp_byte == 0x0A)) {	// 2B ARG
+											MakeUnknown(segeai, 2, DOUNK_SIMPLE);
+											MakeWord(segeai);
+											makeOffset(segeai,Word(segeai),seg,0,banksnum,curbank);
+											segeai = segeai + 2;
+											if(tmp_byte2 & 0x80) {
+												MakeUnknown(segeai, 1, DOUNK_SIMPLE);
+												MakeByte(segeai);
+												segeai = segeai + 1;
+											}
+										} else if((tmp_byte == 0x01)||(tmp_byte == 0x03)||(tmp_byte == 0x08)) {	// 4B ARG
+											MakeUnknown(segeai, 4, DOUNK_SIMPLE);
+											MakeWord(segeai);
+											makeOffset(segeai,Word(segeai),seg,0,banksnum,curbank);
+											MakeWord(segeai + 2);
+											segeai = segeai + 4;
+										} else if((tmp_byte == 0x02)) {	// 6B ARG
+											MakeUnknown(segeai, 6, DOUNK_SIMPLE);
+											MakeWord(segeai);
+											makeOffset(segeai,Word(segeai),seg,0,banksnum,curbank);
+											MakeWord(segeai + 2);
+											makeOffset(segeai + 2,Word(segeai + 2),seg,0,banksnum,curbank);
+											MakeWord(segeai + 4);
+											segeai = segeai + 6;
+										} else {
+//											Message("wrong opc at 0x%08x\n", segeai);
+										}
+									}
+									MakeUnknown(segeai, 1, DOUNK_SIMPLE);
+									MakeByte(segeai);
+									make_code(segeai + 1);
+// CUSTOM */
+/* CUSTOM
+									auto tmp_byte, tmp_stop = 0;
+									segeai = segeai + 1;
+									tmp_byte = segeai;
+									while (tmp_stop == 0) {
+										if((Byte(segeai) == 0xFF)&&(Byte(segeai + 1) == 0xFF)&&(Byte(segeai + 2) == 0))
+											tmp_stop = 1;
+										segeai = segeai + 1;
+									}
+									make_data_array(tmp_byte,segeai - tmp_byte + 2,"");
+									SetArrayFormat(tmp_byte, AP_IDXHEX, 16, 0);
+// CUSTOM */
+///* REGULAR
+									if(PARAMETRIC_SIZE0 == 0xFFFF) { // STOP BYTE FF
+										auto size = FindBinary(segeai + 1, SEARCH_DOWN|SEARCH_CASE, "FF FF 00");
+										MakeUnknown(segeai + 1, size - segeai + 2, DOUNK_SIMPLE);
+										MakeData(segeai + 1, FF_BYTE, size - segeai + 2, 0);
+										SetArrayFormat(segeai + 1, AP_IDXHEX, 16, 0);
+										Wait();
+									} else {
+										make_data_array(segeai + 1, PARAMETRIC_SIZE0, "");
+										make_code(segeai + 1 + PARAMETRIC_SIZE0);
+									}
 //									if(PARAMETRIC_SIZE0==2) {
 //										auto tmb, tm0 = Word(segeai+1);
 //										if (tm0<0x4000)
@@ -1289,7 +1503,6 @@ static main(void) {
 //										MakeWord(segeai+1);
 //										OpOffEx(segeai+1, 0, REF_OFF16, -1, tmb, 0);
 //									}
-									make_code(segeai+1+PARAMETRIC_SIZE0);
 // REGULAR*/
 								}
 #endif
@@ -1394,25 +1607,27 @@ static main(void) {
 		if(param_s>0)
 			Message("parametric calls summary: %d has found\n",param_s);
 
+		garbage_collector();
+
 		Message("\nScript completed, summary:\n");
 		Message("\tCODE bytes:\t0x%x\n",codelog);
 		Message("\tDATA bytes:\t0x%x\n",datalog);
 		Message("\tUNUSED bytes:\t0x%x\n",unusedlog);
 
-//		garbage_collector();
-
 		if(cdlFileOpened == 1)
 			fclose(cdlFile);
 }
 
-static MakeNameAuto(ea,name) {
-	if(MakeNameEx(ea,name,SN_CHECK|SN_NOWARN)==0) {
-		auto res, nname, nc = 0;
-		do {
-			nname = form("%s_%d",name,nc);
-			nc++;
-			res = MakeNameEx(ea,nname,SN_CHECK|SN_NOWARN);
-		} while ((res == 0)&&(nc<10));
+static MakeNameAuto(ea,name,force) {
+	if(isRef(GetFlags(ea))||force) {
+		if(MakeNameEx(ea,name,SN_CHECK|SN_NOWARN)==0) {
+			auto res, nname, nc = 0;
+			do {
+				nname = form("%s_%d",name,nc);
+				nc++;
+				res = MakeNameEx(ea,nname,SN_CHECK|SN_NOWARN);
+			} while ((res == 0)&&(nc<10));
+		}
 	}
 }
 
@@ -1425,7 +1640,7 @@ static makeDataDup(sname, ofs, len, name, cmnt) {
 	MakeData(ea, FF_BYTE, len, 0);
 	SetArrayFormat(ea, AP_IDXHEX|AP_ALLOWDUPS, 0x10, 0);
 //	if(NameEx(BADADDR, ea)=="")
-	MakeNameAuto(ea,name);
+	MakeNameAuto(ea,name,1);
 	MakeRptCmt(ea,cmnt);
 }
 
@@ -1447,9 +1662,10 @@ static makeVector(ea, name) {
 			offset = ea + Byte(ea + 1) + 2;
 		else
 			offset = -1;
+		MakeNameAuto(ea,form("_%s",name),1);
 		if(offset != -1) {
 //			makeOffset(ea,offset,0,1,0,1);
-			MakeNameAuto(getBase(offset)+offset,name);
+			MakeNameAuto(getBase(offset)+offset,name,1);
 		}
 	}
 }
@@ -1575,17 +1791,62 @@ static getBase(val) {
 	return base;
 }
 
+static makeOpOff(ea,opnum,sel,ofs) { // EXPERIMENTOL!!!!
+	auto flags_tmp = GetFlags(ofs);
+	if (((isTail(flags_tmp)) || (isCode(flags_tmp) && (!isRef(flags_tmp))))) {
+	} else {
+		OpOff(ea,opnum,sel);
+	}
+}
+
 static makeOffset(ea,val,s,opnum,bnum,cbank) {
-	if((val >= 0x0) && (val < 0x4000))
-		OpOff(ea,opnum,0);
-	else if((val >=0x4000) && (val < 0x8000)) {
+	if((val >= 0x0000) && (val < 0x4000)) {
+		makeOpOff(ea, opnum, 0, val);
+	} else if((val >=0x4000) && (val < 0x8000)) {
+		auto base_tmp = -1;
 		if(s == 0) {
 			if(bnum == 2)
-				OpOff(ea,opnum,MK_FP(AskSelector(1),0));
+				base_tmp = MK_FP(AskSelector(1), 0);
 			else if(cbank!=-1)
-				OpOff(ea,opnum,MK_FP(AskSelector(cbank),0));
+				base_tmp = MK_FP(AskSelector(cbank), 0);
 		} else
-			OpOff(ea,opnum,MK_FP(AskSelector(s),0));
+			base_tmp = MK_FP(AskSelector(s),0);
+		makeOpOff(ea, opnum, base_tmp, base_tmp + val);
+	} else if((val >=0x8000) && (val < 0x9800))
+		OpOff(ea,opnum,MK_FP(AskSelector(SegByName("CHRRAM")),0));
+	else if((val >=0x9800) && (val < 0x9C00))
+		OpOff(ea,opnum,MK_FP(AskSelector(SegByName("BGMAP1")),0));
+	else if((val >=0x9C00) && (val < 0xA000))
+		OpOff(ea,opnum,MK_FP(AskSelector(SegByName("BGMAP2")),0));
+	else if((val >=0xA000) && (val < 0xC000))
+		OpOff(ea,opnum,MK_FP(AskSelector(SegByName("CRAM")),0));
+	else if((val >=0xC000) && (val < 0xD000))
+		OpOff(ea,opnum,MK_FP(AskSelector(SegByName("RAM0")),0));
+	else if((val >=0xD000) && (val < 0xE000))
+		OpOff(ea,opnum,MK_FP(AskSelector(SegByName("RAMB")),0));
+	else if((val >=0xFE00) && (val < 0xFEA0))
+		OpOff(ea,opnum,MK_FP(AskSelector(SegByName("OAM")),0));
+	else if((val >=0xFF00) && (val < 0xFF80))
+		OpOff(ea,opnum,MK_FP(AskSelector(SegByName("HWREGS")),0));
+	else if((val >=0xFF80) && (val < 0xFFFF))
+		OpOff(ea,opnum,MK_FP(AskSelector(SegByName("ZRAM")),0));
+	else if(val ==0xFFFF)
+		OpOff(ea,opnum,MK_FP(AskSelector(SegByName("IENABLE")),0));
+}
+
+static makeOffsetCall(ea,val,s,opnum,bnum,cbank) {
+	if((val >= 0x0000) && (val < 0x4000)) {
+		OpOff(ea, opnum, 0);
+	} else if((val >=0x4000) && (val < 0x8000)) {
+		auto base_tmp = -1;
+		if(s == 0) {
+			if(bnum == 2)
+				base_tmp = MK_FP(AskSelector(1), 0);
+			else if(cbank!=-1)
+				base_tmp = MK_FP(AskSelector(cbank), 0);
+		} else
+			base_tmp = MK_FP(AskSelector(s),0);
+		OpOff(ea, opnum, base_tmp);
 	} else if((val >=0x8000) && (val < 0x9800))
 		OpOff(ea,opnum,MK_FP(AskSelector(SegByName("CHRRAM")),0));
 	else if((val >=0x9800) && (val < 0x9C00))
@@ -1651,7 +1912,7 @@ static find_code(str, name) {
 	auto ea = -1, ret = BADADDR;
 	while((ea=FindBinary(ea+1, SEARCH_DOWN, str))!=BADADDR) {
 //		if(NameEx(BADADDR, ea)=="")
-			MakeNameAuto(ea,name);
+			MakeNameAuto(ea,name,0);
 			Message("code pattern for %s detected at %04X\n", name, ea);
 			if(ret==-1)
 				ret = ea;
@@ -1678,7 +1939,7 @@ static find_mmc_prg(str,w0o,w1o,name) {
 			else
 				makeDataDup("RAMB",w1&0xFFF,1,"_cur_prg_bank","");
 //			Message("mmc prg bank setup detected at 0x%08x (%04x)\n",ea,w1);
-			MakeNameAuto(ea,name);
+			MakeNameAuto(ea,name,0);
 			det++;
 			ret=ea;
 		} else if((w1>=bmc0)&&(w1<bmc1)) {
@@ -1687,7 +1948,7 @@ static find_mmc_prg(str,w0o,w1o,name) {
 			else
 				makeDataDup("RAMB",w0&0xFFF,1,"_cur_prg_bank","");
 //			Message("mmc prg bank setup detected at 0x%08x (%04x)\n",ea,w0);
-			MakeNameAuto(ea,name);
+			MakeNameAuto(ea,name,0);
 			det++;
 			ret=ea;
 		}
@@ -1703,10 +1964,11 @@ static find_mmc_prg(str,w0o,w1o,name) {
 
 static find_table_jumps(str,wo,cnt) {
 	auto ea=-1;
-	auto bank = GetReg(ea,"ds");
-	auto base = MK_FP(AskSelector(bank), 0);
 	while((ea=FindBinary(ea+1, SEARCH_DOWN, str))!=BADADDR) {
+		auto bank = GetReg(ea,"ds");
+		auto base = MK_FP(AskSelector(bank), 0);
 		auto ww = Word(ea + wo);
+//		Message("table jump pattern \"%s\" found at %08X\n",str,ea);
 		ptr_table_far(base + ww, bank, 1);
 		cnt++;
 	}
@@ -1801,17 +2063,21 @@ static find_far_offset_patterns(str,bofs,wofs,docode,cnt) {
 
 static find_far_offset_patterns_8b(str,bofs,wofsl,wofsh,cnt) {
 	auto ea=-1;
-//	Message("farcall pattern \"%s\" start to find!\n",str);
+	Message("farcall pattern \"%s\" start!\n",str);
 	while((ea=FindBinary(ea+1, SEARCH_DOWN, str))!=BADADDR) {
 //		Message("\t->found at: 0x%08x\n",ea);
 		make_code(ea);
-		auto ba = Byte(ea+bofs);
+		auto ba = Byte(ea+bofs) & 0x7F;
 		auto b0 = Byte(ea+wofsl);
 		auto b1 = Byte(ea+wofsh);
 		auto ww = (b1<<8)|b0;
+		if(ww < 0x4000) ba = 0;
 		auto base = MK_FP(AskSelector(ba), 0);
 		OpOffEx(ea+wofsl-1, 1, REF_LOW8, base+ww, base, 0);
 		OpOffEx(ea+wofsh-1, 1, REF_HIGH8, base+ww, base, 0);
+
+//		MakeUnknown(ea+bofs-2, 3, DOUNK_SIMPLE);
+//		MakeCode(ea+bofs-2);
 
 //		MakeCode(base+ww);
 //		AutoMark(base+ww, AU_CODE);

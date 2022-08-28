@@ -163,8 +163,31 @@ static custom_far_call_search(pat, bank, ofs, instr) {
 	}
 }
 
+static far_ptr_fixed_bank(pat, bank, ofs) {
+	auto ea = -1, base;
+	while((ea = FindBinary(ea + 1, SEARCH_DOWN, pat))!=BADADDR) {
+		base = MK_FP(AskSelector(bank), 0);
+		Message("found pattern at 0x%08x\n", ea);
+		OpOffEx(ea + ofs, 1, REF_OFF16, -1, base, 0);
+	}
+}
+
 static far_ptr_search() {
 	Message("search start\n");
+//	far_ptr_fixed_bank("21 ?? ?? Cd DD 37", 0x1F, 0);
+//	far_ptr_fixed_bank("3E 01 01 ?? ?? CD 5E 07", 1, 2);
+//	far_ptr_fixed_bank("3E 02 01 ?? ?? CD 5E 07", 3, 2);
+//	far_ptr_fixed_bank("3E 03 01 ?? ?? CD 5E 07", 3, 2);
+//	far_ptr_fixed_bank("3E 04 01 ?? ?? CD 5E 07", 3, 2);
+//	far_ptr_fixed_bank("3E 05 01 ?? ?? CD 5E 07", 3, 2);
+//	far_ptr_fixed_bank("3E 06 01 ?? ?? CD 5E 07", 3, 2);
+//	far_ptr_fixed_bank("3E 07 01 ?? ?? CD 5E 07", 3, 2);
+//	far_ptr_fixed_bank("06 ?? 21 ?? ?? CD 81 07", 5, 2);
+//	far_ptr_fixed_bank("06 ?? 21 ?? ?? CD F1 07", 6, 2);
+//	far_ptr_fixed_bank("21 ?? ?? 11 ?? ?? CD 35 08", 6, 0);
+//	far_ptr_fixed_bank("06 ?? 21 ?? ?? CD B5 08", 7, 2);
+//	far_ptr_fixed_bank("06 ?? 21 ?? ?? CD E6 08", 6, 2);
+//	far_ptr_fixed_bank("0E ?? 11 ?? ?? CD C3 09", 6, 2);
 
 //	far_sys_call_search("A9 ?? 85 58 A9 ?? 85 59 20 0B CC", 1, 5, "FJSR");	// dragon ball z
 //	far_sys_call_search("A9 ?? 85 58 A9 ?? 8D 59 00 20 0B CC", 1, 5, "FJSR");
@@ -247,29 +270,48 @@ static input_switch_search() {
 	}
 }
 
+static make_8bit_far_custom(start, size) {
+	auto i, loaddr, hiaddr, lobank, hibank;
+	loaddr = start;
+	hiaddr = loaddr + size;
+	MakeUnknown(hiaddr, size, DOUNK_SIMPLE);
+	for(i=0; i<size; i++) {
+		auto lptr, hptr, base, refptr, lbank, rbank, bank;
+		lptr = Byte(loaddr + i);
+		hptr = Byte(hiaddr + i);
+		refptr = hptr << 8;
+		base = MK_FP(AskSelector(lptr + 1), 0);
+		MakeByte(hiaddr + i);
+		if(refptr!=0)
+			OpOffEx(hiaddr + i, 0, REF_HIGH8, base + refptr, base, 0);
+	}
+}
+
 static main(void) {
 
 //	input_switch_search();
+
+//	make_8bit_far_custom(0x5DF0AB,33);
 
 	garbage_collector();
 
 //	far_ptr_search();
 
 //	                   opcode,  size, segmask, bankop, ofsop, delta, shift, dobankbyte
-//	parametric_farcall("20 D6 F7", 3,    0x3F,      5,     3,    -1,     0, 1);
+//	parametric_farcall("20 F4 CC", 2,    0x0F,     -1,     3,     0,     0, 0);
 //	parametric_farcall("20 05 D8", 3,    0x3F,      5,     3,     0,     0, 1);
 //	parametric_farcall("CD A7 05", 3,    0x3F,      5,     3,     0,     0, 1);
 //	parametric_farcall("CD 62 21", 3,    0x3F,      5,     3,     0,     0, 1);
 
-//	parametric_fixsize("20 83 CC", 2);
-//	parametric_fixsize("20 7F CC", 2);
-//	parametric_fixsize("20 95 CC", 2);
-//	parametric_fixsize("20 38 C0", 2);
+//	parametric_fixsize("CD 64 04", 4);
+//	parametric_fixsize("CD 0F 08", 2);
+//	parametric_fixsize("CD 7E 0A", 2);
+//	parametric_fixsize("CD 28 1B", 1);
 //	parametric_fixsize("CD 12 46", 10);
 
-//	parametric_switch("20 E1 C2");
+//	parametric_switch("20 C4 C6");
 
-//	parametric_fixsize("20 C6 B0", 5);
+//	parametric_fixsize("20 2C FD", 4);
 //	parametric_fixsize("20 73 DD", 2);
 //	parametric_fixsize("20 89 DD", 2);
 //	parametric_fixsize("20 92 DD", 2);
@@ -323,7 +365,7 @@ static main(void) {
 //	parametric_fixsize("20 AD F7", 2);
 //	parametric_fixsize("20 80 F7", 2);
 
-//	parametric_stopbytes("CD DE 0C", "65");
+//	parametric_stopbytes("CD D0 03", "65");
 //	parametric_stopbytes("CD 63 09", "65");
 //	parametric_stopbytes("CD 99 0E", "00");
 //	parametric_stopbytes("CD B8 77", "00 00");

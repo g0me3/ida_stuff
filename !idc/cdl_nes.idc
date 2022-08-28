@@ -2,12 +2,14 @@
 #include <idc.idc>
 #include <functions.idc>
 
-#define DO_DATA_OFFSET
+//#define DO_DATA_OFFSET
 #define DO_CODE_OFFSETS
 //#define DO_DATA
 #define DO_CODE
 #define DO_ALT_MESSAGES
-#define DO_CMT_CLEAR
+//#define DO_CMT_CLEAR
+
+//#define FDS_ADJUST
 
 static main(void) {
 	auto cdlFileName, cdlFile, cdlOpen;
@@ -22,27 +24,6 @@ static main(void) {
 	}
 	if( cdlFile != 0 ) {
 		Message("CDL file \"%s\" opened succesfull!\n", cdlFileName);
-/*
-		auto cdlSignature = "", cdlType = "";
-		fgetc(cdlFile);														// skip 0D
-		for(i=0; i<13; i++) cdlSignature = cdlSignature + fgetc(cdlFile);	// read signature
-		fgetc(cdlFile);														// skip 0F
-		for(i=0; i<15; i++) cdlType = cdlType + fgetc(cdlFile);				// read type
-		if ((cdlSignature == "BIZHAWK-CDL-2")&&((cdlType == "NES            ")) {
-			auto cdlFiles=0;
-			for(i=0; i<4; i++) cdlFiles = cdlFiles | (fgetc(cdlFile)<<(i*8));	// read files count
-			Message("CDL file opened succesfully.\n\tName:    \"%s\"\n\tVersion: \"%s\"\n\tType:    \"%s\"\n\tChunks:  %d\n", cdlFileName,cdlSignature,cdlType,cdlFiles);
-			result=cdl_chunk_search(cdlFile, "???", cdlFiles);
-			if(result == -1) {
-				Message("Can't find proper Data chunk\nStartig disassembly without CDL.\n", cdlFileName);
-				cdlFileOpened = 0;
-			} else
-				cdlFileOpened = 1;
-		} else {
-			Message("CDL file not in GB format (%s, %s)!\nStartig disassembly without CDL.\n", cdlSignature, cdlType);
-			cdlFileOpened = 0;
-		}
-*/
 		cdlOpen = 1;
 	} else {
 		cdlOpen = 0;
@@ -131,38 +112,104 @@ static main(void) {
 
 		Message("SEG analyze is over\n");
 
+		auto segea, segea_orig, segsize, segorg, segorgmask, segbase, stop, segorg_backup;
+
+//		if(cdlOpen == 0) {
+			segea_orig = FirstSeg();
+			segorg = SegStart(segea_orig) - MK_FP(AskSelector(SegByName(SegName(segea_orig))),0);
+			segsize = SegEnd(segea_orig) - segea_orig;
+			segorgmask = 0xFFFF;
+//		}
+
 		auto codelog = 0, datalog = 0, pcmlog = 0, unusedlog = 0;
 		do {
-			auto segea, segea_orig, segsize, segorg, segorgmask;
-			auto i = 0, segeai, optype, opvalue, opsize = 0, lastop = 0, lastopaddr = 0, lastopaddrbit = 0, ofst, byteread = 0, firstoffset = 0xffff;
+			auto i = 0, segeai, optype, opvalue, opsize = 0, lastop = 0, lastopaddr = 0, lastopaddrbit = 0, ofst, byteread = 0, firstoffset = 0xffff, segname, segidx;
 
 			if(secondpass == 0) {
-				segea_orig = SegByBase(seg);
-				segorg = getSegOrg(seg);
-				segsize = getSegSize(seg);
-				segorgmask = ~(segsize - 1);
-				Message("Seg EA=%08x, ORG=%04x SIZE=%04x MASK=%04x\n>first pass\n", segea_orig, segorg, segsize, segorgmask);
+//				if(cdlOpen == 1) {
+//					segea_orig = SegByBase(seg);
+//					segbase = MK_FP(AskSelector(SegByName(SegName(segea_orig))),0);
+//					segorg = getSegOrg(seg);
+//					segsize = getSegSize(seg);
+//					segorgmask = ~(segsize - 1);
+//				} else {
+					segea_orig = NextSeg(segea_orig);
+					segname = SegName(segea_orig);
+					segidx = SegByName(segname);
+					if(segidx == -1) {
+//						Message(">error ");
+						if(substr(segname,0,4) == "BANK") {
+							segidx = xtol(substr(segname,4,-1)) + 1;
+//							Message(form("bank name is %s, bank idx is %02x\n",segname, segidx - 1));
+						}
+					}
+					segbase = MK_FP(AskSelector(segidx),0);
+					segorg = SegStart(segea_orig) - segbase;
+					segsize = SegEnd(segea_orig) - segea_orig;
+					if((segsize & 0x1FFF) != 0)
+						segorgmask = 0xFFFF;
+					else
+						segorgmask = ~(segsize - 1);
+//				}
+				Message("Seg EA=%08x, BASE=%08x ORG=%04x SIZE=%04x MASK=%04x\n>first pass\n", segea_orig, segbase, segorg, segsize, segorgmask);
 			} else {
 				Message(">second pass\n");
 			}
 
+			segea = segea_orig;
+
 			do {
-				segea = segea_orig;
 				segeai = segea + i;
+
+#ifdef FDS_ADJUST
+/*
+				if((segea == 0x6000) && (i == 0x600)) {
+					i = 0;
+					segea = 0x16600;
+					segsize = 0x7a00;
+					segbase = 0x10000;
+					segorg = 0x6600;
+					segorgmask = 0xFFFF;
+					Message(" > Seg EA=%08x, ORG=%04x SIZE=%04x MASK=%04x\n>first pass\n", segea, segorg, segsize, segorgmask);
+				} //*/
+
+				if((segea == 0x6000) && (i == 0x4140)) {
+					i = 0;
+/*					segea = 0x28140;
+					segsize = 0x3eb0;
+					segbase = 0x1E000; //*/
+					segea = 0x36140;
+					segsize = 0x22c0;
+					segbase = 0x2C000;
+
+					segorg = 0xA140;
+					segorgmask = 0xFFFF;
+					Message(" > Seg EA=%08x, ORG=%04x SIZE=%04x MASK=%04x\n>first pass\n", segea, segorg, segsize, segorgmask);
+				} //*/
+
+#endif
 
 				if(secondpass == 0) {
 					if(!ncd) {
-						if(cdlOpen == 1)
+						if(cdlOpen == 1) {
 							cd = fgetc(cdlFile);
-						else
-							cd = 0;
+//							if(cd == -1)
+//								cd = 0;
+						} else
+//							cd = 0;
+							cd = -1;
 					} else
 						ncd = 0;
+
+//					Message("segeai = %08x, cdl = %02x\n", segeai, cd);
+
+					if(cd != -1) {
 
 #ifdef DO_CMT_CLEAR
 					MakeComm(segeai, "");
 					MakeComm(segeai+1, "");
 #endif
+
 					if((cd & 3) == 2) {
 						if(cd & 0x40) {
 #ifdef DO_ALT_MESSAGES
@@ -209,14 +256,16 @@ static main(void) {
 								ofst = Byte(segeai);
 								byteread++;
 							}
-							if(cdlOpen == 1)
+							if(cdlOpen == 1) {
 								cd = fgetc(cdlFile);
-							else
+								if(cd == -1)
+									cd = 0;
+							} else
 								cd = 0;
 							ncd = 1;
 							ofst = ofst | (Byte(segeai + 1) << 8);
 							byteread++;
-							if(((cd & 3) == 2) && lastop && (lastopaddrbit == (i & 1)) && ((ofst & segorgmask) == segorg)) {
+							if(((cd & 3) == 2) && lastop && (lastopaddrbit == (i & 1)) && ((ofst >= segorg) && (ofst < (segorg + segsize))/*(ofst & segorgmask) == segorg)*/)) {
 								if(cd & 0x80) {
 									if (cd & 0x20)
 #ifdef DO_ALT_MESSAGES
@@ -255,7 +304,7 @@ static main(void) {
 								if((lastopaddr == i) || ((ofst & (segsize - 1)) < firstoffset))
 									firstoffset = ofst & (segsize - 1);
 #ifdef DO_DATA_OFFSETS
-								OpOff(segeai,0,MK_FP(AskSelector(seg),0));
+								OpOff(segeai,0,segbase);
 #endif
 								ncd = 0;
 								i++;
@@ -287,9 +336,11 @@ static main(void) {
 								ofst = Byte(segeai);
 								byteread++;
 							}
-							if(cdlOpen == 1)
+							if(cdlOpen == 1) {
 								cd = fgetc(cdlFile);
-							else
+								if(cd == -1)
+									cd = 0;
+							} else
 								cd = 0;
 							ncd = 1;
 #ifdef DO_ALT_MESSAGES
@@ -298,15 +349,15 @@ static main(void) {
 							if((cd & 3) == 0) {
 								ofst = ofst | (Byte(segeai + 1) << 8);
 								byteread++;
-								if((ofst & segorgmask) == segorg) {
+								if((ofst >= segorg) && (ofst < (segorg + segsize))/*(ofst & segorgmask) == segorg*/) {
 #ifdef DO_DATA
 									MakeUnknown(segeai, 2, DOUNK_SIMPLE);
 									MakeWord(segeai);
 #endif
-									if((lastopaddr == i) || ((ofst & (segsize - 1)) < firstoffset))
-										firstoffset = (ofst & (segsize - 1));
+									if((lastopaddr == i) || ((ofst & segorgmask) < firstoffset))
+										firstoffset = (ofst & segorgmask);
 #ifdef DO_DATA_OFFSETS
-									OpOff(segeai,0,MK_FP(AskSelector(seg),0));
+									OpOff(segeai,0,segbase);
 #endif
 								}
 								ncd = 0;
@@ -395,6 +446,7 @@ static main(void) {
 						}
 						codelog++;
 					}
+					} // if(op != -1)
 				} else {
 					auto opmasked;
 					optype = GetOpType(segeai,0);
@@ -402,11 +454,12 @@ static main(void) {
 						opvalue = GetOperandValue(segeai,0);
 						opmasked = (opvalue & segorgmask);
 #ifdef DO_CODE_OFFSETS
-						if(opmasked < 0x6000)
+						if(opmasked < 0x6000) {
 							OpOff(segeai,0,0);
-						else if(opmasked == segorg)
-							OpOff(segeai,0,MK_FP(AskSelector(seg),0));
-						else if(miltisingleorg > 1)
+						} else if((opmasked >= segorg) && (opmasked < (segorg + segsize))/*opmasked == segorg*/) {
+							OpOff(segeai,0,segbase);
+//							Message("op at segeai = 0x%08X, opvalue = %04X, opmasked = %04X, segbase = %08X\n",segeai, opvalue, opmasked, segbase);
+						} else if(miltisingleorg > 1)
 							makeOffsetMulti(opmasked, segeai, seg6, seg8, segA, segC, segE, segsmask);
 						else if((miltisingleorg == 1)&&(opmasked == onesingleorg))
 							OpOff(segeai,0,MK_FP(AskSelector(onesingleseg),0));
@@ -421,9 +474,10 @@ static main(void) {
 #ifdef DO_CODE_OFFSETS
 							if(opmasked < 0x6000)
 								OpOff(segeai,0,0);
-							else if(opmasked == segorg)
-								OpOff(segeai,0,MK_FP(AskSelector(seg),0));
-							else if(miltisingleorg > 1)
+							else if((opmasked >= segorg) && (opmasked < (segorg + segsize))/*opmasked == segorg*/) {
+								OpOff(segeai,0,segbase);
+//								Message("op at segeai = 0x%08X, opvalue = %04X, opmasked = %04X, segbase = %08X\n",segeai, opvalue, opmasked, segbase);
+							} else if(miltisingleorg > 1)
 								makeOffsetMulti(opmasked, segeai, seg6, seg8, segA, segC, segE, segsmask);
 							else if((miltisingleorg == 1)&&(opmasked == onesingleorg))
 								OpOff(segeai,0,MK_FP(AskSelector(onesingleseg),0));
@@ -437,26 +491,28 @@ static main(void) {
 			} while (i < segsize);
 			if(secondpass == 1) {
 				secondpass = 0;
+				stop = NextSeg(segea_orig);
 				seg++;
 			} else {
 				secondpass = 1;
 				Wait();
 			}
-		} while (SegByBase(seg) != BADADDR);
+//		} while (SegByBase(seg) != BADADDR);
+		} while (stop != BADADDR);
 
 //		garbage_collector();
 
-		segea = SegByBase(seg - 1) + segsize;
-		MakeUnknown(segea - 6, 6, DOUNK_SIMPLE);
-		MakeWord(segea - 6);
-		if(!OpOff(segea - 6,0,MK_FP(AskSelector(seg - 1),0)))
-			OpOff(segea - 6,0,MK_FP(AskSelector(seg - 2),0));
-		MakeWord(segea - 4);
-		if(!OpOff(segea - 4,0,MK_FP(AskSelector(seg - 1),0)))
-			OpOff(segea - 4,0,MK_FP(AskSelector(seg - 2),0));
-		MakeWord(segea - 2);
-		if(!OpOff(segea - 2,0,MK_FP(AskSelector(seg - 1),0)))
-			OpOff(segea - 2,0,MK_FP(AskSelector(seg - 2),0));
+//		segea = SegByBase(seg - 1) + segsize;
+//		MakeUnknown(segea - 6, 6, DOUNK_SIMPLE);
+//		MakeWord(segea - 6);
+//		if(!OpOff(segea - 6,0,MK_FP(AskSelector(seg - 1),0)))
+//			OpOff(segea - 6,0,MK_FP(AskSelector(seg - 2),0));
+//		MakeWord(segea - 4);
+//		if(!OpOff(segea - 4,0,MK_FP(AskSelector(seg - 1),0)))
+//			OpOff(segea - 4,0,MK_FP(AskSelector(seg - 2),0));
+//		MakeWord(segea - 2);
+//		if(!OpOff(segea - 2,0,MK_FP(AskSelector(seg - 1),0)))
+//			OpOff(segea - 2,0,MK_FP(AskSelector(seg - 2),0));
 
 		Message("CDL file has been processed successfully.\n");
 		Message("	CODE bytes:   0x%x\n",codelog);
@@ -526,30 +582,3 @@ static makeOffsetMulti(opmasked, segeai, seg6, seg8, segA, segC, segE, segsmask)
 	else if((opmasked < 0x8000) && (seg6 == 0))
 		OpOff(segeai,0,0);
 }
-
-/*
-static cdl_chunk_search(cdl, chunk, max) {
-	auto name, size, len, i, ret = 0;
-
-	while(ret==0) {
-		name="";
-		size=0;
-		len=fgetc(cdl);									// get chunk name len
-		for(i=0; i<len; i++) name = name + fgetc(cdl);	// read chunk name
-		if(name!=chunk) {
-			for(i=0; i<4; i++) size = size | (fgetc(cdl)<<(i*8));
-														// read file size
-			for(i=0; i<size; i++) fgetc(cdl);			// read skip file
-			max--;
-			if(max==0)
-				ret = -1;
-//			Message("\tSkip:   \"%s\" (size %08x)\n\n",name, size);
-		} else {
-			for(i=0; i<4; i++) size = size | (fgetc(cdl)<<(i*8));
-			Message("\tFound:   \"%s\" (size %08x)\n\n",name, size);
-			ret = size;
-		}
-	}
-	return ret;
-}
-*/
